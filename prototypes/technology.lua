@@ -18,6 +18,7 @@ data:extend({
                 {"science-pack-2", 1},
             },
             time = 15,
-        }
+        },
+        order = "a-d-e"
     }
 })
