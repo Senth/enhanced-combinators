@@ -1,0 +1,10 @@
+{
+  "name": "enhanced-combinators",
+  "version": "0.0.1",
+  "title": "Enhanced Combinators",
+  "author": "Senth",
+  "homepage": "https://github.com/Senth/enhanced-combinators",
+  "dependencies": ["base >= 0.16"],
+  "factorio_version": "0.16",
+  "description": "Adds combinators for min/max and sort order."
+}
