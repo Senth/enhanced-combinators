@@ -1,5 +1,5 @@
-require "combinator_logic.min_max_combinator"
-require "combinator_logic.enhanced_combinator"
+require "combinators.min_max_combinator"
+require "combinators.enhanced_combinator"
 require "common.debug"
 
 local inspect = require('inspect')
@@ -29,7 +29,7 @@ end
 -- ENTITY
 local function on_built_entity(event)
     local entity = event.created_entity
-    if MinMaxCombinator:is_instance(entity) then
+    if MinMaxCombinator.is_instance(entity) then
         local min_max_combinator = MinMaxCombinator(entity)
         enhanced_combinators[min_max_combinator.id] = min_max_combinator
         logd("Placed Min Max Combinator, id: " .. min_max_combinator.id)
@@ -38,8 +38,8 @@ end
 
 local function on_remove_entity(event)
     local entity = event.entity
-    if MinMaxCombinator:is_instance(entity) then
-        local entity_id = EnhancedCombinator:get_id(entity)
+    if MinMaxCombinator.is_instance(entity) then
+        local entity_id = EnhancedCombinator.get_id(entity)
         enhanced_combinators[entity_id] = nil
         logd("Removed Min Max Combinator, id: " .. entity_id)
     end
@@ -47,7 +47,7 @@ end
 
 local function on_entity_settings_pasted(event)
     local entity = event.entity
-    if MinMaxCombinator:is_instance(entity) then
+    if MinMaxCombinator.is_instance(entity) then
         logd("on_entity_settings_pasted for Min Max Combinator")
         -- TODO
     end
@@ -67,10 +67,11 @@ local function on_gui_opened(event)
     if event.gui_type == defines.gui_type.entity then
         local entity = event.entity
         if MinMaxCombinator.is_instance(entity) then
-            local id = EnhancedCombinator:get_id(entity)
+            local id = EnhancedCombinator.get_id(entity)
             local combinator = enhanced_combinators[id]
 
-            if combinator and entity.valid and combinator.entity and combinator.entity == entity then
+            if combinator and entity.valid and combinator.entity == entity then
+                combinator.entity = entity
                 combinator:on_gui_opened(player)
                 opened_custom_gui = true
             end
