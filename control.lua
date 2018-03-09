@@ -1,5 +1,4 @@
-require "combinators.min_max_combinator"
-require "combinators.enhanced_combinator"
+require "enhanced_combinator"
 require "common.debug"
 
 local inspect = require('inspect')
@@ -16,12 +15,9 @@ local function on_load()
     enhanced_combinators = global.enhanced_combinators
 
     -- Recreate metatables
-    local min_max_metatable = getmetatable(EnhancedCombinator1(nil))
+    local enhanced_combinator_metatable = getmetatable(EnhancedCombinator(nil))
     for key, value in pairs(enhanced_combinators) do
-        -- Min Max
-        if value.name == EnhancedCombinator1:get_name() then
-            setmetatable(value, min_max_metatable)
-        end
+        setmetatable(value, enhanced_combinator_metatable)
     end
 end
 
@@ -29,26 +25,26 @@ end
 -- ENTITY
 local function on_built_entity(event)
     local entity = event.created_entity
-    if EnhancedCombinator1.is_instance(entity) then
-        local min_max_combinator = EnhancedCombinator1(entity)
-        enhanced_combinators[min_max_combinator.id] = min_max_combinator
-        logd("Placed Min Max Combinator, id: " .. min_max_combinator.id)
+    if EnhancedCombinator.is_instance(entity) then
+        local enhanced_combinator = EnhancedCombinator(entity)
+        enhanced_combinators[enhanced_combinator.id] = enhanced_combinator
+        logd("Placed Enhanced Combinator, name: " .. entity.name .. ", id: " .. enhanced_combinator.id)
     end
 end
 
 local function on_remove_entity(event)
     local entity = event.entity
-    if EnhancedCombinator1.is_instance(entity) then
-        local entity_id = EnhancedCombinator.get_id(entity)
+    if EnhancedCombinator.is_instance(entity) then
+        local entity_id = EnhancedCombinator.create_id_from_entity(entity)
         enhanced_combinators[entity_id] = nil
-        logd("Removed Min Max Combinator, id: " .. entity_id)
+        logd("Removed Enhanced Combinator, id: " .. entity_id)
     end
 end
 
 local function on_entity_settings_pasted(event)
     local entity = event.entity
-    if EnhancedCombinator1.is_instance(entity) then
-        logd("on_entity_settings_pasted for Min Max Combinator")
+    if EnhancedCombinator.is_instance(entity) then
+        logd("on_entity_settings_pasted for Enhanced Combinator")
         -- TODO
     end
     logd("on_entity_settings_pasted")
@@ -66,14 +62,17 @@ local function on_gui_opened(event)
 
     if event.gui_type == defines.gui_type.entity then
         local entity = event.entity
-        if EnhancedCombinator1.is_instance(entity) then
-            local id = EnhancedCombinator.get_id(entity)
+        if EnhancedCombinator.is_instance(entity) then
+            local id = EnhancedCombinator.create_id_from_entity(entity)
             local combinator = enhanced_combinators[id]
 
             if combinator and entity.valid and combinator.entity == entity then
                 combinator.entity = entity
                 combinator:on_gui_opened(player)
                 opened_custom_gui = true
+
+                -- Close vanilla GUI
+                player.opened = nil
             end
         end
     end

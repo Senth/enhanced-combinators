@@ -4,33 +4,41 @@ require "common.string"
 
 local GUI_NAME = "enhanced-combinator-gui"
 
-ENHANCED_COMBINATOR_TYPES_MIN = "MIN"
-ENHANCED_COMBINATOR_TYPES_MAX = "MAX"
---ENHANCED_COMBINATOR_TYPES_ORDER = "ORDER"
---ENHANCED_COMBINATOR_TYPES_AVERAGE = "AVERAGE"
---ENHANCED_COMBINATOR_TYPES_MEMORY = "MEMORY"
---ENHANCED_COMBINATOR_TYPES_TIMER = "TIMER"
+ENHANCED_COMBINATOR_TYPES_INACTIVE = 0
+ENHANCED_COMBINATOR_TYPES_MIN = 1
+ENHANCED_COMBINATOR_TYPES_MAX = 2
+--ENHANCED_COMBINATOR_TYPES_ORDER = 3
+--ENHANCED_COMBINATOR_TYPES_AVERAGE = 4
+--ENHANCED_COMBINATOR_TYPES_MEMORY = 5
+--ENHANCED_COMBINATOR_TYPES_TIMER = 6
 
-ENHANCED_COMBINATOR_TYPES = {}
+local ENHANCED_COMBINATOR_TYPES = {}
 ENHANCED_COMBINATOR_TYPES[1] = {
     ENHANCED_COMBINATOR_TYPES_MIN,
-    ENHANCED_COMBINATOR_TYPES_MAX
+    ENHANCED_COMBINATOR_TYPES_MAX,
+}
+ENHANCED_COMBINATOR_TYPES[2] = {
+    ENHANCED_COMBINATOR_TYPES_MIN,
+    ENHANCED_COMBINATOR_TYPES_MAX,
+}
+ENHANCED_COMBINATOR_TYPES[3] = {
+    ENHANCED_COMBINATOR_TYPES_MIN,
+    ENHANCED_COMBINATOR_TYPES_MAX,
 }
 
 --- Constructor
 --- @param combinator this combinator (self)
 --- @param entity the entity that was placed
---- @param version the version of the enhanced combinator
-EnhancedCombinator = class(function(combinator, entity, version)
+EnhancedCombinator = class(function(combinator, entity)
     combinator.entity = entity
     if entity ~= nil then
-        combinator.id = create_id_from_entity(entity)
+        combinator.id = EnhancedCombinator.create_id_from_entity(entity)
         combinator.name = entity.name
+        combinator.version = tonumber(string.sub(entity.name, -1))
     end
     combinator.update_interval = 1
     combinator.update_counter = 0
-    combinator.version = version
-    combinator.type = ENHANCED_COMBINATOR_TYPES_MIN
+    combinator.type = ENHANCED_COMBINATOR_TYPES_INACTIVE
     combinator.filter = {}
 end)
 
@@ -48,10 +56,6 @@ end
 
 function EnhancedCombinator.get_name()
     return "enhanced-combinator"
-end
-
-function EnhancedCombinator.get_id(entity)
-    return create_id_from_entity(entity)
 end
 
 function EnhancedCombinator.is_gui_open(player)
@@ -74,12 +78,11 @@ end
 
 --- Create the main (table) window for the combinator
 function EnhancedCombinator:gui_create_window(player)
-    player.opened = nil
     EnhancedCombinator.close_gui(player)
 
     local window = player.gui.center.add({ type = "table", name = GUI_NAME, column_count = 1, style = "enhanced-combinators-window" })
 
-    local locale_name = { "enhanced-combinator-" .. self.version }
+    local locale_name = { "enhanced-combinator-name-" .. self.version }
     local header = window.add({ type = "frame", name = "header", caption = locale_name, style = "enhanced-combinators-frame" })
     header.style.title_bottom_padding = 10
     local entity_preview = header.add { type = "entity-preview", name = "entity-preview" }
@@ -88,7 +91,7 @@ function EnhancedCombinator:gui_create_window(player)
     return window
 end
 
-function EnhancedCombinator1:gui_create_function_frame(window)
+function EnhancedCombinator:gui_create_function_frame(window)
     local function_frame = window.add({ type = "frame", name = "function_frame", caption = { "enhanced-combinator-function" }, style = "enhanced-combinators-frame" })
     --    local choice_table = function_frame.add({ type = "table", name = "choice_table", column_count = 2 })
     --    choice_table.style.horizontal_spacing = 10
@@ -97,21 +100,22 @@ function EnhancedCombinator1:gui_create_function_frame(window)
     --    local max_radio_button = choice_table.add({ type = "radiobutton", name = "max_radio_button", caption = { "enhanced-combinator-max" }, state = false })
 end
 
---- Create filters frame
---- @param
-function EnhancedCombinator1:gui_create_filter_frame(window)
+--- Create filters frame. One row for version 1, two for version 2, three for 3.
+function EnhancedCombinator:gui_create_filter_frame(window)
     local filter_frame = window.add({ type = "frame", name = "filter_frame", caption = { "enhanced-combinator-filters" }, style = "enhanced-combinators-frame" })
-    local filter_table = filter_frame.add({ type = "table", name = "filter_table", column_count = 5, style = "enhanced-combinators-filter-table" })
+    local filter_table = filter_frame.add({ type = "table", name = "filter_table", column_count = 6, style = "enhanced-combinators-filter-table" })
     local filters = {}
 
-    for i = 1, 10 do
+    local rows = self.version
+
+    for i = 1, 6 * rows do
         local name = "filter" .. i
         local filter = filter_table.add({ type = "choose-elem-button", name = name, elem_type = "signal" })
         table.insert(filters, filter)
     end
 end
 
-function EnhancedCombinator1:gui_create_update_interval_frame(window)
+function EnhancedCombinator:gui_create_update_interval_frame(window)
     local update_interval = window.add({ type = "frame", name = "update_interval", caption = { "enhanced-combinator-update-interval" }, style = "enhanced-combinators-frame" })
 
     --    local update_table = update_interval.add({type = "table", name = "update_table", column_count = 3})
