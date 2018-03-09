@@ -16,10 +16,10 @@ local function on_load()
     enhanced_combinators = global.enhanced_combinators
 
     -- Recreate metatables
-    local min_max_metatable = getmetatable(MinMaxCombinator(nil))
+    local min_max_metatable = getmetatable(EnhancedCombinator1(nil))
     for key, value in pairs(enhanced_combinators) do
         -- Min Max
-        if value.name == MinMaxCombinator:get_name() then
+        if value.name == EnhancedCombinator1:get_name() then
             setmetatable(value, min_max_metatable)
         end
     end
@@ -29,8 +29,8 @@ end
 -- ENTITY
 local function on_built_entity(event)
     local entity = event.created_entity
-    if MinMaxCombinator.is_instance(entity) then
-        local min_max_combinator = MinMaxCombinator(entity)
+    if EnhancedCombinator1.is_instance(entity) then
+        local min_max_combinator = EnhancedCombinator1(entity)
         enhanced_combinators[min_max_combinator.id] = min_max_combinator
         logd("Placed Min Max Combinator, id: " .. min_max_combinator.id)
     end
@@ -38,7 +38,7 @@ end
 
 local function on_remove_entity(event)
     local entity = event.entity
-    if MinMaxCombinator.is_instance(entity) then
+    if EnhancedCombinator1.is_instance(entity) then
         local entity_id = EnhancedCombinator.get_id(entity)
         enhanced_combinators[entity_id] = nil
         logd("Removed Min Max Combinator, id: " .. entity_id)
@@ -47,7 +47,7 @@ end
 
 local function on_entity_settings_pasted(event)
     local entity = event.entity
-    if MinMaxCombinator.is_instance(entity) then
+    if EnhancedCombinator1.is_instance(entity) then
         logd("on_entity_settings_pasted for Min Max Combinator")
         -- TODO
     end
@@ -66,7 +66,7 @@ local function on_gui_opened(event)
 
     if event.gui_type == defines.gui_type.entity then
         local entity = event.entity
-        if MinMaxCombinator.is_instance(entity) then
+        if EnhancedCombinator1.is_instance(entity) then
             local id = EnhancedCombinator.get_id(entity)
             local combinator = enhanced_combinators[id]
 

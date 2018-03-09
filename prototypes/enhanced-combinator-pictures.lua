@@ -1,9 +1,9 @@
-function generate_enhanced_combinator_min_max(combinator)
+function generate_enhanced_combinator_1(combinator)
     combinator.sprites = make_4way_animation_from_spritesheet({
         layers = {
             {
                 scale = 0.5,
-                filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-min-max.png",
+                filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-1.png",
                 width = 144,
                 height = 124,
                 frame_count = 1,
@@ -11,7 +11,7 @@ function generate_enhanced_combinator_min_max(combinator)
             },
             {
                 scale = 0.5,
-                filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-min-max-shadow.png",
+                filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-shadow.png",
                 width = 148,
                 height = 156,
                 frame_count = 1,
