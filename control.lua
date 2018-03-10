@@ -9,6 +9,7 @@ local enhanced_combinators = {}
 -- INIT
 local function on_init()
     global.enhanced_combinators = {}
+    global.enhanced_combinators_opened_guis = {}
 end
 
 local function on_load()
@@ -77,7 +78,7 @@ local function on_gui_opened(event)
         end
     end
 
-    -- Close custom GUI if we open another (vanilla) GUI
+    -- Close custom GUI if we opened another (vanilla) GUI
     if not opened_custom_gui then
         -- If a custom GUI was already open, close it and don't open the vanilla GUI
         if (EnhancedCombinator.is_gui_open(player)) then
@@ -89,26 +90,18 @@ end
 
 local function on_gui_click(event)
     logd("on_gui_click")
-    --    local entity = event.entity
-    --    if MinMaxCombinator:is_instance(entity) then
-    --        logd("on_gui_click for Min Max Combinator")
-    --        -- TODO
-    --    end
-end
-
-local function print_combinators()
-    for key, value in pairs(enhanced_combinators) do
-        logd("[" .. key .. "]:" .. value.name)
+    local combinator = EnhancedCombinator.get_event_combinator(event)
+    if combinator then
+        combinator:on_gui_click(event)
     end
 end
 
 local function on_gui_changed(event)
     logd("on_gui_changed")
-    --    local entity = event.entity
-    --    if MinMaxCombinator:is_instance(entity) then
-    --        logd("on_gui_changed for Min Max Combinator")
-    --        -- TODO
-    --    end
+    local combinator = EnhancedCombinator.get_event_combinator(event)
+    if combinator then
+        combinator:on_gui_changed(event)
+    end
 end
 
 -- EVENTS
@@ -131,3 +124,4 @@ script.on_event(defines.events.on_gui_click, on_gui_click)
 script.on_event(defines.events.on_gui_elem_changed, on_gui_changed)
 script.on_event(defines.events.on_gui_selection_state_changed, on_gui_changed)
 script.on_event(defines.events.on_gui_text_changed, on_gui_changed)
+script.on_event(defines.events.on_gui_checked_state_changed, on_gui_changed)
