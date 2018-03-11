@@ -17,5 +17,11 @@ default["enhanced-combinators-filter-table"] = {
 default["enhanced-combinators-frame"] = {
     type = "frame_style",
     parent = "frame",
-    title_bottom_padding = 10
+    title_bottom_padding = 10,
+}
+
+default["enhanced-combinators-update-interval-textfield"] = {
+    type = "textfield_style",
+    parent = "textfield",
+    width = 55,
 }

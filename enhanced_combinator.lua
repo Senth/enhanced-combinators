@@ -4,42 +4,55 @@ require "common.string"
 
 local GUI_NAME_PREFIX = "enhanced-combinator-gui_"
 
-ENHANCED_COMBINATOR_TYPES_INACTIVE = 0
-ENHANCED_COMBINATOR_TYPES_MIN = 1
-ENHANCED_COMBINATOR_TYPES_MAX = 2
-ENHANCED_COMBINATOR_TYPES_SORT = 3
-ENHANCED_COMBINATOR_TYPES_AVERAGE = 4
-ENHANCED_COMBINATOR_TYPES_MEMORY = 5
-ENHANCED_COMBINATOR_TYPES_TIMER = 6
+local TYPES_INACTIVE = 0
+local TYPES_MIN = 1
+local TYPES_MAX = 2
+local TYPES_SORT = 3
+local TYPES_AVERAGE = 4
+local TYPES_MEMORY = 5
+local TYPES_TIMER = 6
 
-local TYPES = {
+local TYPE_SPRITES = {
+    [TYPES_INACTIVE] = "*",
+    [TYPES_MIN] = "-",
+    [TYPES_MAX] = "+",
+    [TYPES_SORT] = "/",
+    [TYPES_AVERAGE] = "%",
+    [TYPES_MEMORY] = "^",
+    [TYPES_TIMER] = "<<",
+}
+
+--- The different types available for the three different combinator versions
+local TYPES_AVAILABLE = {
     [1] = {
-        ENHANCED_COMBINATOR_TYPES_INACTIVE,
-        ENHANCED_COMBINATOR_TYPES_MIN,
-        ENHANCED_COMBINATOR_TYPES_MAX,
+        TYPES_INACTIVE,
+        TYPES_MIN,
+        TYPES_MAX,
     },
     [2] = {
-        ENHANCED_COMBINATOR_TYPES_INACTIVE,
-        ENHANCED_COMBINATOR_TYPES_MIN,
-        ENHANCED_COMBINATOR_TYPES_MAX,
+        TYPES_INACTIVE,
+        TYPES_MIN,
+        TYPES_MAX,
     },
     [3] = {
-        ENHANCED_COMBINATOR_TYPES_INACTIVE,
-        ENHANCED_COMBINATOR_TYPES_MIN,
-        ENHANCED_COMBINATOR_TYPES_MAX,
+        TYPES_INACTIVE,
+        TYPES_MIN,
+        TYPES_MAX,
     }
 }
 
 local TYPE_NAMES = {}
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_INACTIVE] = { "enhanced-combinator-inactive" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_MIN] = { "enhanced-combinator-min" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_MAX] = { "enhanced-combinator-max" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_SORT] = { "enhanced-combinator-sort" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_AVERAGE] = { "enhanced-combinator-average" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_MEMORY] = { "enhanced-combinator-memory" }
-TYPE_NAMES[ENHANCED_COMBINATOR_TYPES_TIMER] = { "enhanced-combinator-timer" }
+TYPE_NAMES[TYPES_INACTIVE] = { "enhanced-combinator-inactive" }
+TYPE_NAMES[TYPES_MIN] = { "enhanced-combinator-min" }
+TYPE_NAMES[TYPES_MAX] = { "enhanced-combinator-max" }
+TYPE_NAMES[TYPES_SORT] = { "enhanced-combinator-sort" }
+TYPE_NAMES[TYPES_AVERAGE] = { "enhanced-combinator-average" }
+TYPE_NAMES[TYPES_MEMORY] = { "enhanced-combinator-memory" }
+TYPE_NAMES[TYPES_TIMER] = { "enhanced-combinator-timer" }
 
 local GUI_FUNCTION_DROPDOWN = "function-drop-down"
+local GUI_UPDATE_INTERVAL_TEXTFIELD = "update_interval-textfield"
+local GUI_FILTER_ELEM_BUTTON = "filter-"
 local GUI_FRAME_ENTITY_PREVIEW = "entity-frame"
 local GUI_FRAME_FUNCTION = "function-frame"
 
@@ -56,8 +69,8 @@ EnhancedCombinator = class(function(combinator, entity)
     end
     combinator.update_interval = 1
     combinator.update_counter = 0
-    combinator.type = ENHANCED_COMBINATOR_TYPES_INACTIVE
-    combinator.filter = {}
+    combinator.type = TYPES_INACTIVE
+    combinator.filters = {}
 end)
 
 function EnhancedCombinator.create_id_from_entity(entity)
@@ -107,8 +120,7 @@ end
 function EnhancedCombinator:on_gui_opened(player)
     local window = self:gui_create_window(player)
     self:gui_create_function_frame(window)
-
-    EnhancedCombinator:create_optional_frames(window)
+    self:create_optional_frames(window)
 end
 
 function EnhancedCombinator:create_optional_frames(window)
@@ -125,7 +137,10 @@ end
 --- @param dropdown_element the drop-down GUI element
 function EnhancedCombinator:switch_function(dropdown_element)
     local selected_index = dropdown_element.selected_index
-    self.type = TYPES[self.version][selected_index]
+    self.type = TYPES_AVAILABLE[self.version][selected_index]
+
+    -- Update combinator display sprite
+    self.entity.get_or_create_control_behavior().parameters.operation = TYPE_SPRITES[self.type]
 
     -- Update GUI frames
     local root_window = self:get_root_window(dropdown_element)
@@ -161,14 +176,47 @@ end
 
 function EnhancedCombinator:on_gui_changed(event)
     local element = event.element
-    logd(element.name .. " - " .. self.id)
+    local element_name = element.name
+    logd(element_name .. " - " .. self.id)
 
-    -- Switch-case functionality
-    local action = {
-        [GUI_FUNCTION_DROPDOWN] = function(self, element) self:switch_function(element) end,
-    }
+    -- Special case for filter functionality
+    if string.starts(element_name, GUI_FILTER_ELEM_BUTTON) then
+        self:set_filter(element)
+    else
+        -- Switch-case functionality
+        local action = {
+            [GUI_FUNCTION_DROPDOWN] = function(self, element) self:switch_function(element) end,
+            [GUI_UPDATE_INTERVAL_TEXTFIELD] = function(self, element) self:set_update_interval(element) end
+        }
 
-    action[element.name](self, element)
+        action[element.name](self, element)
+    end
+end
+
+function EnhancedCombinator:set_filter(element)
+    local filter_index = tonumber(element.name:match("%d$"))
+    self.filters[filter_index] = element.elem_value
+end
+
+function EnhancedCombinator:set_update_interval(element)
+    -- Validate textfield
+    local text = element.text
+
+    -- Skip validation if empty (we want to allow users to erase the field)
+    if text:len() > 0 then
+        local non_digit = text:match("%D")
+        local begins_with_zero = text:match("^0")
+        local too_long = text:len() > 6
+        -- Reset GUI update interval, to fix invalid attempts
+        if non_digit or begins_with_zero or too_long then
+            element.text = self.update_interval
+        else
+            -- Okay update interval value, set it
+            self.update_interval = tonumber(text)
+        end
+    else
+        self.update_interval = 1
+    end
 end
 
 --- Create the main (table) window for the combinator
@@ -182,7 +230,6 @@ function EnhancedCombinator:gui_create_window(player)
 
     local locale_name = { "enhanced-combinator-name-" .. self.version }
     local header = window.add({ type = "frame", name = GUI_FRAME_ENTITY_PREVIEW, caption = locale_name, style = "enhanced-combinators-frame" })
-    header.style.title_bottom_padding = 10
     local entity_preview = header.add { type = "entity-preview", name = "entity-preview" }
     entity_preview.entity = self.entity
 
@@ -194,7 +241,7 @@ function EnhancedCombinator:gui_create_function_frame(window)
 
     local available_functions = {}
     local selected_index = 0
-    for key, type in pairs(TYPES[self.version]) do
+    for key, type in pairs(TYPES_AVAILABLE[self.version]) do
         if type == self.type then
             selected_index = key
         end
@@ -213,36 +260,36 @@ function EnhancedCombinator:gui_create_filter_frame(window)
         local rows = self.version
 
         for i = 1, 6 * rows do
-            local name = "filter" .. i
-            filter_table.add({ type = "choose-elem-button", name = name, elem_type = "signal" })
+            local name = GUI_FILTER_ELEM_BUTTON .. i
+            local filter = filter_table.add({ type = "choose-elem-button", name = name, elem_type = "signal" })
+            filter.elem_value = self.filters[i]
         end
     end
 end
 
 function EnhancedCombinator:is_filter_functionality()
-    return self.type == ENHANCED_COMBINATOR_TYPES_MIN or
-            self.type == ENHANCED_COMBINATOR_TYPES_MAX or
-            self.type == ENHANCED_COMBINATOR_TYPES_SORT or
-            self.type == ENHANCED_COMBINATOR_TYPES_AVERAGE or
-            self.type == ENHANCED_COMBINATOR_TYPES_MEMORY
+    return self.type == TYPES_MIN or
+            self.type == TYPES_MAX or
+            self.type == TYPES_SORT or
+            self.type == TYPES_AVERAGE or
+            self.type == TYPES_MEMORY
 end
 
 function EnhancedCombinator:gui_create_update_interval_frame(window)
     if self:is_update_interval_functionality() then
         local update_interval_frame = window.add({ type = "frame", name = "update-interval-frame", caption = { "enhanced-combinator-update-interval" }, style = "enhanced-combinators-frame" })
 
-        --    local update_table = update_interval.add({type = "table", name = "update_table", column_count = 3})
-
-        local every_label = update_interval_frame.add({ type = "label", name = "every_label", caption = "Every" })
-        local interval_textfield = update_interval_frame.add({ type = "textfield", name = "interval_textfield" })
-        local tick_label = update_interval_frame.add({ type = "label", name = "tick_label", caption = "tick(s)." })
+        update_interval_frame.add({ type = "label", name = "every_label", caption = "Every" })
+        local textfield = update_interval_frame.add({ type = "textfield", name = GUI_UPDATE_INTERVAL_TEXTFIELD, style = "enhanced-combinators-update-interval-textfield" })
+        textfield.text = self.update_interval
+        update_interval_frame.add({ type = "label", name = "tick_label", caption = "tick(s)." })
     end
 end
 
 function EnhancedCombinator:is_update_interval_functionality()
-    return self.type == ENHANCED_COMBINATOR_TYPES_MIN or
-            self.type == ENHANCED_COMBINATOR_TYPES_MAX or
-            self.type == ENHANCED_COMBINATOR_TYPES_SORT or
-            self.type == ENHANCED_COMBINATOR_TYPES_AVERAGE or
-            self.type == ENHANCED_COMBINATOR_TYPES_MEMORY
+    return self.type == TYPES_MIN or
+            self.type == TYPES_MAX or
+            self.type == TYPES_SORT or
+            self.type == TYPES_AVERAGE or
+            self.type == TYPES_MEMORY
 end

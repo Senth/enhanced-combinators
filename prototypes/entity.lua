@@ -22,45 +22,6 @@ end
 --- @param health health of the combinator
 --- @param energy amount of energy the combinator uses
 function generate_enhanced_combinator(combinator, version, health, energy)
-    local default_display_sprite = {
-        north =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -4.5),
-        },
-        east =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -10.5),
-        },
-        south =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -4.5),
-        },
-        west =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -10.5),
-        },
-    }
-
     combinator.type = "arithmetic-combinator"
     combinator.name = "enhanced-combinator-" .. version
     combinator.icon = "__enhanced-combinators__/graphics/icons/enhanced-combinator-" .. version .. ".png"
@@ -121,6 +82,45 @@ function generate_enhanced_combinator(combinator, version, health, energy)
     combinator.circuit_wire_max_distance = 9
 
     -- SPRITES
+    local default_display_sprite = {
+        north =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        east =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+        south =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        west =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+    }
+
     combinator.sprites = make_4way_animation_from_spritesheet({
         layers = {
             {
