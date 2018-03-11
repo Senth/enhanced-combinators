@@ -27,9 +27,46 @@ end
 local function on_built_entity(event)
     local entity = event.created_entity
     if EnhancedCombinator.is_instance(entity) then
+        entity.get_control_behavior().parameters = {
+            first_signal = { type = "item" },
+            operation
+        }
+        entity.get_control_behavior().parameters.operation = "+"
+        logd(entity.get_control_behavior().parameters)
         local enhanced_combinator = EnhancedCombinator(entity)
         enhanced_combinators[enhanced_combinator.id] = enhanced_combinator
         logd("Placed Enhanced Combinator, name: " .. entity.name .. ", id: " .. enhanced_combinator.id)
+    end
+
+    if entity.name == "arithmetic-combinator" then
+        logd("START")
+        logd("Changing operation on vanilla arithmetic combinator")
+        logd("Original parameters")
+        logd(entity.get_control_behavior().parameters)
+
+--        logd("Testing to set operation manually")
+--        entity.get_control_behavior().parameters.parameters.operation = "+"
+--        logd(entity.get_control_behavior().parameters)
+
+        logd("Test set whole parameters variable:")
+        local parameters = {
+            ["parameters"] = {
+                first_signal = { type = "item" },
+                operation = "*",
+                output_signal = { type = "item" },
+                second_constant = 0,
+            },
+        }
+        logd("Local paremeters variable:")
+        logd(parameters.parameters)
+        entity.get_control_behavior().parameters = parameters
+        if entity.get_control_behavior().parameters ~= nil then
+            logd("Updated control parameters")
+            logd(entity.get_control_behavior().parameters)
+        else
+            logd("Control parameters are nil")
+        end
+        logd("END")
     end
 end
 

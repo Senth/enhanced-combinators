@@ -140,7 +140,12 @@ function EnhancedCombinator:switch_function(dropdown_element)
     self.type = TYPES_AVAILABLE[self.version][selected_index]
 
     -- Update combinator display sprite
-    self.entity.get_or_create_control_behavior().parameters.operation = TYPE_SPRITES[self.type]
+    logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
+    local parameters = self.entity.get_or_create_control_behavior().parameters
+    logd(parameters)
+    parameters.operation = "+"
+--    parameters.operation = TYPE_SPRITES[self.type]
+--    logd("After: " .. parameters.operation)
 
     -- Update GUI frames
     local root_window = self:get_root_window(dropdown_element)
