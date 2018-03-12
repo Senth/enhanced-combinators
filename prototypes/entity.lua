@@ -380,183 +380,152 @@ function generate_enhanced_combinator(combinator, version, health, energy)
     }
 end
 
+function generate_enhanced_output_combinator_1(combinator)
+    generate_enhanced_output_combinator(combinator, 1)
+    return combinator
+end
+
+function generate_enhanced_output_combinator_2(combinator)
+    generate_enhanced_output_combinator(combinator, 2)
+    return combinator
+end
+
+function generate_enhanced_output_combinator_3(combinator)
+    generate_enhanced_output_combinator(combinator, 3)
+    return combinator
+end
+
+function generate_enhanced_output_combinator(combinator, version)
+    combinator.type = "constant-combinator"
+    combinator.name = "enhanced-output-combinator-" .. version
+    combinator.icon = "__enhanced-combinators__/graphics/icons/enhanced-combinator-" .. version .. ".png"
+    combinator.icon_size = 32
+    combinator.flags = { "placeable-neutral", "player-creation" }
+    combinator.minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-output-combinator-" .. version }
+    combinator.max_health = 120
+    combinator.corpse = "small-remnants"
+    combinator.collision_box = { { -0.35, -0.35 }, { 0.35, 0.35 } }
+    combinator.selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } }
+    combinator.item_slot_count = 500
+    combinator.vehicle_impact_sound = { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 }
+    combinator.activity_led_light =
+    {
+        intensity = 0,
+        size = 1,
+        color = { r = 1.0, g = 1.0, b = 1.0 }
+    }
+    combinator.activity_led_light_offsets =
+    {
+        { 0.296875, -0.40625 },
+        { 0.25, -0.03125 },
+        { -0.296875, -0.078125 },
+        { -0.21875, -0.46875 }
+    }
+    combinator.circuit_wire_max_distance = 9
+    combinator.sprites = make_4way_animation_from_spritesheet({
+        layers =
+        {
+            {
+                filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
+                width = 1,
+                height = 1,
+                frame_count = 1,
+            },
+        },
+    })
+    combinator.activity_led_sprites = {
+        north =
+        {
+            filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
+            width = 1,
+            height = 1,
+            frame_count = 1,
+        },
+        east =
+        {
+            filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
+            width = 1,
+            height = 1,
+            frame_count = 1,
+        },
+        south =
+        {
+            filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
+            width = 1,
+            height = 1,
+            frame_count = 1,
+        },
+        west =
+        {
+            filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
+            width = 1,
+            height = 1,
+            frame_count = 1,
+        },
+    }
+    combinator.circuit_wire_connection_points = {
+        -- North
+        {
+            shadow =
+            {
+                red = util.by_pixel(4, 6.5),
+                green = util.by_pixel(23.5, 7),
+            },
+            wire =
+            {
+                red = util.by_pixel(-9, -3),
+                green = util.by_pixel(10, -3),
+            },
+        },
+        -- East
+        {
+            shadow =
+            {
+                red = util.by_pixel(21.5, 0.5),
+                green = util.by_pixel(21, 14),
+            },
+            wire =
+            {
+                red = util.by_pixel(7, -11),
+                green = util.by_pixel(7, 3),
+            },
+        },
+        -- South
+        {
+            shadow =
+            {
+                red = util.by_pixel(23, 12.5),
+                green = util.by_pixel(3, 13),
+            },
+            wire =
+            {
+                red = util.by_pixel(9, 0.5),
+                green = util.by_pixel(-10, 0.5),
+            },
+        },
+        -- West
+        {
+            shadow =
+            {
+                red = util.by_pixel(9.5, 14),
+                green = util.by_pixel(9, 0),
+            },
+            wire =
+            {
+                red = util.by_pixel(-6, 2.5),
+                green = util.by_pixel(-6, -10.5),
+            },
+        },
+    }
+end
+
 data:extend({
     generate_enhanced_combinator_1 {},
     generate_enhanced_combinator_2 {},
     generate_enhanced_combinator_3 {},
 
     -- Invisible output combinator to allow outputting lots of signals from a regular arithmetic combinator
-    generate_enhanced_output_combinator {
-        type = "constant-combinator",
-        name = "enhanced-output-combinator",
-        icon = "__base__/graphics/icons/constant-combinator.png",
-        icon_size = 32,
-        flags = { "placeable-neutral", "player-creation" },
-        minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-output-combinator" },
-        max_health = 120,
-        corpse = "small-remnants",
-        collision_box = { { -0.35, -0.35 }, { 0.35, 0.35 } },
-        selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        item_slot_count = 500,
-        vehicle_impact_sound = { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 },
-        activity_led_light =
-        {
-            intensity = 0,
-            size = 1,
-            color = { r = 1.0, g = 1.0, b = 1.0 }
-        },
-        activity_led_light_offsets =
-        {
-            { 0.296875, -0.40625 },
-            { 0.25, -0.03125 },
-            { -0.296875, -0.078125 },
-            { -0.21875, -0.46875 }
-        },
-        circuit_wire_max_distance = 9,
-        sprites = make_4way_animation_from_spritesheet({
-            layers =
-            {
-                {
-                    filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
-                    width = 1,
-                    height = 1,
-                    frame_count = 1,
-                },
-            },
-        }),
-        activity_led_sprites = {
-            north =
-            {
-                filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
-                width = 1,
-                height = 1,
-                frame_count = 1,
-            },
-            east =
-            {
-                filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
-                width = 1,
-                height = 1,
-                frame_count = 1,
-            },
-            south =
-            {
-                filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
-                width = 1,
-                height = 1,
-                frame_count = 1,
-            },
-            west =
-            {
-                filename = "__enhanced-combinators__/graphics/entity/invisible-entity.png",
-                width = 1,
-                height = 1,
-                frame_count = 1,
-            },
-        },
-        circuit_wire_connection_points = {
-            -- North
-            {
-                shadow =
-                {
-                    red = util.by_pixel(4, 6.5),
-                    green = util.by_pixel(23.5, 7),
-                },
-                wire =
-                {
-                    red = util.by_pixel(-9, -3),
-                    green = util.by_pixel(10, -3),
-                },
-            },
-            -- East
-            {
-                shadow =
-                {
-                    red = util.by_pixel(21.5, 0.5),
-                    green = util.by_pixel(21, 14),
-                },
-                wire =
-                {
-                    red = util.by_pixel(7, -11),
-                    green = util.by_pixel(7, 3),
-                },
-            },
-            -- South
-            {
-                shadow =
-                {
-                    red = util.by_pixel(23, 12.5),
-                    green = util.by_pixel(3, 13),
-                },
-                wire =
-                {
-                    red = util.by_pixel(9, 0.5),
-                    green = util.by_pixel(-10, 0.5),
-                },
-            },
-            -- West
-            {
-                shadow =
-                {
-                    red = util.by_pixel(9.5, 14),
-                    green = util.by_pixel(9, 0),
-                },
-                wire =
-                {
-                    red = util.by_pixel(-6, 2.5),
-                    green = util.by_pixel(-6, -10.5),
-                },
-            },
-        },
-        --        circuit_wire_connection_points = {
-        --            {
-        --                shadow =
-        --                {
-        --                    red = util.by_pixel(7, -6),
-        --                    green = util.by_pixel(23, -6),
-        --                },
-        --                wire =
-        --                {
-        --                    red = util.by_pixel(-8.5, -17.5),
-        --                    green = util.by_pixel(7, -17.5),
-        --                },
-        --            },
-        --            {
-        --                shadow =
-        --                {
-        --                    red = util.by_pixel(32, -5),
-        --                    green = util.by_pixel(32, 8),
-        --                },
-        --                wire =
-        --                {
-        --                    red = util.by_pixel(16, -16.5),
-        --                    green = util.by_pixel(16, -3.5),
-        --                },
-        --            },
-        --            {
-        --                shadow =
-        --                {
-        --                    red = util.by_pixel(25, 20),
-        --                    green = util.by_pixel(9, 20),
-        --                },
-        --                wire =
-        --                {
-        --                    red = util.by_pixel(9, 7.5),
-        --                    green = util.by_pixel(-6.5, 7.5),
-        --                },
-        --            },
-        --            {
-        --                shadow =
-        --                {
-        --                    red = util.by_pixel(1, 11),
-        --                    green = util.by_pixel(1, -2),
-        --                },
-        --                wire =
-        --                {
-        --                    red = util.by_pixel(-15, -0.5),
-        --                    green = util.by_pixel(-15, -13.5),
-        --                },
-        --            },
-        --        },
-    },
+    generate_enhanced_output_combinator_1 {},
+    generate_enhanced_output_combinator_2 {},
+    generate_enhanced_output_combinator_3 {},
 })

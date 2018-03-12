@@ -75,7 +75,7 @@ EnhancedCombinator = class(function(combinator, entity)
 
     -- Create output combinator
     if entity ~= nil then
-        combinator.output_entity = EnhancedCombinator.create_output_combinator(entity)
+        combinator.output_entity = EnhancedCombinator.create_output_combinator(entity, combinator.version)
         -- Link output combinator to enhanced combinator
         if combinator.output_entity then
             local output_entity_id = EnhancedCombinator.create_any_id_from_entity(combinator.output_entity)
@@ -88,7 +88,8 @@ end)
 
 --- Create an output combinator that is linked to an enhanced combinator
 --- @param entity Enhanced Combinator entity
-function EnhancedCombinator.create_output_combinator(entity)
+--- @param version the version of the enhanced combinator
+function EnhancedCombinator.create_output_combinator(entity, version)
     local direction = entity.direction
     local output_position
     if direction == defines.direction.north then
@@ -113,7 +114,7 @@ function EnhancedCombinator.create_output_combinator(entity)
         }
     end
     return entity.surface.create_entity {
-        name = "enhanced-output-combinator",
+        name = "enhanced-output-combinator-" .. version,
         position = output_position,
         direction = direction,
         force = entity.force,
@@ -123,7 +124,7 @@ end
 function EnhancedCombinator.create_id_from_entity(entity)
     if string.starts(entity.name, EnhancedCombinator.get_name()) then
         return EnhancedCombinator.create_any_id_from_entity(entity)
-    elseif entity.name == EnhancedCombinator.get_output_name() then
+    elseif string.starts(entity.name, EnhancedCombinator.get_output_name()) then
         -- Get the enhanced combinator rather than the enhanced-output-combinator
         local output_id = EnhancedCombinator.create_any_id_from_entity(entity)
         return global.enhanced_output_combinator_to_enhanced_combinator[output_id]
@@ -136,7 +137,7 @@ end
 
 function EnhancedCombinator.is_instance(entity)
     if entity ~= nil then
-        return string.starts(entity.name, EnhancedCombinator.get_name()) or entity.name == EnhancedCombinator.get_output_name()
+        return string.starts(entity.name, EnhancedCombinator.get_name()) or string.starts(entity.name, EnhancedCombinator.get_output_name())
     else
         return false
     end
