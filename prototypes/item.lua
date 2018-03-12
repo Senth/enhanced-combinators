@@ -32,4 +32,15 @@ data:extend({
         order = "c[combinators]-d[enhanced-combinator-3]",
         stack_size = 50
     },
+    {
+        type = "item",
+        name = "enhanced-output-combinator",
+        icon = "__base__/graphics/icons/constant-combinator.png",
+        icon_size = 32,
+        flags = { "goes-to-quickbar" },
+        subgroup = "circuit-network",
+        place_result="enhanced-output-combinator",
+        order = "c[combinators]-c[enhanced-output-combinator]",
+        stack_size= 50,
+    },
 })

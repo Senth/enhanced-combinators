@@ -1,6 +1,7 @@
 require "common.class"
 require "common.debug"
 require "common.string"
+local CircuitNetwork = require "circuit_network"
 
 local GUI_NAME_PREFIX = "enhanced-combinator-gui_"
 
@@ -71,15 +72,71 @@ EnhancedCombinator = class(function(combinator, entity)
     combinator.update_counter = 0
     combinator.type = TYPES_INACTIVE
     combinator.filters = {}
+
+    -- Create output combinator
+    if entity ~= nil then
+        combinator.output_entity = EnhancedCombinator.create_output_combinator(entity)
+        -- Link output combinator to enhanced combinator
+        if combinator.output_entity then
+            local output_entity_id = EnhancedCombinator.create_any_id_from_entity(combinator.output_entity)
+            global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = combinator.id
+        else
+            loge("Couldn't create Enhanced output combinator")
+        end
+    end
 end)
 
+--- Create an output combinator that is linked to an enhanced combinator
+--- @param entity Enhanced Combinator entity
+function EnhancedCombinator.create_output_combinator(entity)
+    local direction = entity.direction
+    local output_position
+    if direction == defines.direction.north then
+        output_position = {
+            x = entity.position.x,
+            y = entity.position.y - 0.5,
+        }
+    elseif direction == defines.direction.south then
+        output_position = {
+            x = entity.position.x,
+            y = entity.position.y + 0.5,
+        }
+    elseif direction == defines.direction.west then
+        output_position = {
+            x = entity.position.x - 0.5,
+            y = entity.position.y,
+        }
+    elseif direction == defines.direction.east then
+        output_position = {
+            x = entity.position.x + 0.5,
+            y = entity.position.y,
+        }
+    end
+    return entity.surface.create_entity {
+        name = "enhanced-output-combinator",
+        position = output_position,
+        direction = direction,
+        force = entity.force,
+    }
+end
+
 function EnhancedCombinator.create_id_from_entity(entity)
+    if string.starts(entity.name, EnhancedCombinator.get_name()) then
+        return EnhancedCombinator.create_any_id_from_entity(entity)
+    elseif entity.name == EnhancedCombinator.get_output_name() then
+        -- Get the enhanced combinator rather than the enhanced-output-combinator
+        local output_id = EnhancedCombinator.create_any_id_from_entity(entity)
+        return global.enhanced_output_combinator_to_enhanced_combinator[output_id]
+    end
+end
+
+function EnhancedCombinator.create_any_id_from_entity(entity)
     return entity.surface.name .. ":" .. entity.position.x .. ";" .. entity.position.y
 end
 
 function EnhancedCombinator.is_instance(entity)
     if entity ~= nil then
-        return string.starts(entity.name, EnhancedCombinator.get_name())
+        return string.starts(entity.name, EnhancedCombinator.get_name()) or entity.name == EnhancedCombinator.get_output_name()
     else
         return false
     end
@@ -89,8 +146,66 @@ function EnhancedCombinator.get_name()
     return "enhanced-combinator"
 end
 
+function EnhancedCombinator.get_output_name()
+    return "enhanced-output-combinator"
+end
+
 function EnhancedCombinator:on_tick()
-    -- TODO
+    if self.type ~= TYPES_INACTIVE then
+        self.update_counter = self.update_counter + 1
+
+        if self.update_counter >= self.update_interval then
+            self.update_counter = 0
+
+            if self.type == TYPES_MIN then
+                self:on_tick_min()
+            elseif self.type == TYPES_MAX then
+                self:on_tick_max()
+            elseif self.type == TYPES_SORT then
+                self:on_tick_sort()
+            elseif self.type == TYPES_AVERAGE then
+                self:on_tick_average()
+            elseif self.type == TYPES_TIMER then
+                self:on_tick_timer()
+            elseif self.type == TYPES_MEMORY then
+                self:on_tick_memory()
+            end
+        end
+    end
+end
+
+function EnhancedCombinator:on_tick_min()
+    local control = self.entity.get_control_behavior()
+    local input_signals = CircuitNetwork.get_input(control)
+    logd(input_signals)
+
+    local min_signal
+    local min_count = math.huge
+    for signal_name, signal_info in pairs(input_signals) do
+        if signal_info.count < min_count then
+            min_signal = signal_info.signal
+            min_count = signal_info.count
+        end
+    end
+
+    CircuitNetwork.set_output_signal(control, min_signal)
+
+    logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
+end
+
+function EnhancedCombinator:on_tick_max()
+end
+
+function EnhancedCombinator:on_tick_sort()
+end
+
+function EnhancedCombinator:on_tick_average()
+end
+
+function EnhancedCombinator:on_tick_timer()
+end
+
+function EnhancedCombinator:on_tick_memory()
 end
 
 function EnhancedCombinator.get_event_combinator(event)
@@ -142,15 +257,7 @@ function EnhancedCombinator:switch_function(dropdown_element)
     -- Update combinator display sprite
     logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
     local control = self.entity.get_or_create_control_behavior()
-    local parameters = {
-        first_signal = { type = "item"},
-        operation = TYPE_SPRITES[self.type],
-        output_signal = { type = "item"},
-        second_constant = 0,
-    }
-    control.parameters = {
-        parameters = parameters
-    }
+    CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
 
     -- Update GUI frames
     local root_window = self:get_root_window(dropdown_element)

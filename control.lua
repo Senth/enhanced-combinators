@@ -10,6 +10,7 @@ local enhanced_combinators = {}
 local function on_init()
     global.enhanced_combinators = {}
     global.enhanced_combinators_opened_guis = {}
+    global.enhanced_output_combinator_to_enhanced_combinators = {}
 end
 
 local function on_load()
@@ -52,7 +53,9 @@ local function on_entity_settings_pasted(event)
 end
 
 local function on_tick()
-    -- TODO
+    for k, enhanced_combinator in pairs(enhanced_combinators) do
+        enhanced_combinator:on_tick()
+    end
 end
 
 
