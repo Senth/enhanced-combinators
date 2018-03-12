@@ -4,6 +4,7 @@ require "common.debug"
 local inspect = require('inspect')
 
 local enhanced_combinators = {}
+local enhanced_combinators_opened_guis = {}
 local enhanced_output_combinator_to_enhanced_combinator = {}
 
 -- INIT
@@ -15,6 +16,7 @@ end
 
 local function on_load()
     enhanced_combinators = global.enhanced_combinators
+    enhanced_combinators_opened_guis = global.enhanced_combinators_opened_guis
     enhanced_output_combinator_to_enhanced_combinator = global.enhanced_output_combinator_to_enhanced_combinator
 
     -- Recreate metatables
@@ -116,7 +118,7 @@ local function on_player_rotated_entity(event)
     logd("on_player_rotated_entity")
     local entity = event.entity
     if EnhancedCombinator.is_instance(entity) then
-        local combinator_id = EnhancedCombinator.get_id_from_entity(entity)
+        local combinator_id = EnhancedCombinator.create_id_from_entity(entity)
         local combinator = enhanced_combinators[combinator_id]
         combinator:on_player_rotated_entity(event)
     end

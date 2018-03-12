@@ -79,21 +79,20 @@ EnhancedCombinator = class(function(combinator, entity)
 
     -- Create output combinator
     if entity ~= nil then
-        combinator.output_entity = EnhancedCombinator.create_output_combinator(entity, combinator.version)
+        EnhancedCombinator.create_output_combinator(combinator, entity)
         -- Link output combinator to enhanced combinator
-        if combinator.output_entity then
-            local output_entity_id = EnhancedCombinator.create_any_id_from_entity(combinator.output_entity)
-            global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = combinator.id
-        else
-            loge("Couldn't create Enhanced output combinator")
-        end
+        --        if combinator.output_entity then
+        --            local output_entity_id = EnhancedCombinator.create_any_id_from_entity(combinator.output_entity)
+        --            global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = combinator.id
+        --        else
+        --            loge("Couldn't create Enhanced output combinator")
+        --        end
     end
 end)
 
 --- Create an output combinator that is linked to an enhanced combinator
 --- @param entity Enhanced Combinator entity
---- @param version the version of the enhanced combinator
-function EnhancedCombinator.create_output_combinator(entity, version)
+function EnhancedCombinator:create_output_combinator(entity)
     local direction = entity.direction
     local output_position
     if direction == defines.direction.north then
@@ -117,12 +116,20 @@ function EnhancedCombinator.create_output_combinator(entity, version)
             y = entity.position.y,
         }
     end
-    return entity.surface.create_entity {
-        name = "enhanced-output-combinator-" .. version,
+    self.output_entity = entity.surface.create_entity {
+        name = "enhanced-output-combinator-" .. self.version,
         position = output_position,
         direction = direction,
         force = entity.force,
     }
+
+    -- Link output combinator to enhanced combinator
+    if self.output_entity then
+        local output_entity_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
+        global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = self.id
+    else
+        loge("Couldn't create Enhanced output combinator")
+    end
 end
 
 function EnhancedCombinator.create_id_from_entity(entity)
@@ -248,7 +255,16 @@ function EnhancedCombinator:on_tick_memory()
 end
 
 function EnhancedCombinator:on_player_rotated_entity(event)
-    -- TODO
+    -- Rotate Enhanced (input) combinator
+    if self.is_output_instance(event.entity) then
+        self.entity.rotate()
+    end
+
+    -- Move output combinator. Can only be accomplished by removing and the recreating the entity
+    local output_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
+    global.enhanced_output_combinator_to_enhanced_combinator[output_id] = nil
+    self.output_entity.destroy()
+    self:create_output_combinator(self.entity)
 end
 
 function EnhancedCombinator.get_event_combinator(event)
@@ -473,7 +489,7 @@ function EnhancedCombinator:gui_create_output_frame(window)
         local output_frame = window.add({ type = "frame", name = "output-frame", caption = { "gui-decider.output-item" }, style = "enhanced-combinators-frame" })
 
         -- TODO radio buttons
---    logd("output state: " .. self.output_type)
+        --    logd("output state: " .. self.output_type)
         local radio_1 = output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_ONE, caption = { "gui-decider.one" }, tooltip = { "gui-decider.one-description" }, state = self.output_type == OUTPUT_TYPE_ONE })
         output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_INPUT_COUNT, caption = { "gui-decider.input-count" }, tooltip = { "gui-decider.input-count-description" }, state = self.output_type == OUTPUT_TYPE_INPUT_COUNT })
     end

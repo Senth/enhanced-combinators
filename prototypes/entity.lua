@@ -31,7 +31,7 @@ function generate_enhanced_output_combinator_2(combinator)
 end
 
 function generate_enhanced_output_combinator_3(combinator)
-    generate_enhanced_output_combinator(combinator, 3, 500, 500)
+    generate_enhanced_output_combinator(combinator, 3, 500, 200)
     return combinator
 end
 
