@@ -26,28 +26,41 @@ end
 --- Add signal to the specified array. If the signal already exists it will add that result
 --- @param from the signal array to add from
 --- @param to the array to add to
-function add_signals(from, to)
+--- @param filters (optional) filters. Only these signal will be added to the 'to' table
+function add_signals(from, to, filters)
     for k, signal_container in pairs(from) do
         local signal = signal_container.signal
         local id = signal.name
         local count = signal_container.count
-        if to[id] ~= nil then
-            logd("Updating count to " .. (to[id].count + count))
-            to[id].count = to[id].count + count
-        else
-            local signal_info = {
-                signal = signal,
-                count = count,
-            }
-            to[id] = signal_info
+        local add_signal = true
+        if filters then
+            if filters[id] == nil then
+                logd("Don't use signal: " .. id)
+                add_signal = false
+            else
+                logd("Use signal: " .. id)
+            end
+        end
+        if add_signal then
+            if to[id] ~= nil then
+                logd("Updating count to " .. (to[id].count + count))
+                to[id].count = to[id].count + count
+            else
+                local signal_info = {
+                    signal = signal,
+                    count = count,
+                }
+                to[id] = signal_info
+            end
         end
     end
 end
 
 --- Return the input from a control
 --- @param input_combinator the (input) Enhanced Combinator to get all the input signal from
+--- @param filters (optional) filters for the input signals
 --- @return all signal inputs for the combinator
-function CircuitNetwork.get_input(input_combinator)
+function CircuitNetwork.get_input(input_combinator, filters)
     local control = input_combinator.get_control_behavior()
     local red_input = get_signals(control, defines.wire_type.red, defines.circuit_connector_id.combinator_input)
     local green_input = get_signals(control, defines.wire_type.green, defines.circuit_connector_id.combinator_input)
@@ -55,10 +68,10 @@ function CircuitNetwork.get_input(input_combinator)
     -- Add inputs from both wires
     local input = {}
     if red_input then
-        add_signals(red_input, input)
+        add_signals(red_input, input, filters)
     end
     if green_input then
-        add_signals(green_input, input)
+        add_signals(green_input, input, filters)
     end
 
     return input

@@ -76,6 +76,7 @@ EnhancedCombinator = class(function(combinator, entity)
     combinator.type = TYPES_INACTIVE
     combinator.output_state = OUTPUT_TYPE_ONE
     combinator.filters = {}
+    combinator.filters_lookup = {}
 
     -- Create output combinator
     if entity ~= nil then
@@ -195,7 +196,7 @@ function EnhancedCombinator:on_tick()
 end
 
 function EnhancedCombinator:on_tick_min()
-    local input_signals = CircuitNetwork.get_input(self.entity)
+    local input_signals = CircuitNetwork.get_input(self.entity, self.filters_lookup)
 
     local min_signal
     local min_count = math.huge
@@ -219,7 +220,7 @@ function EnhancedCombinator:on_tick_min()
 end
 
 function EnhancedCombinator:on_tick_max()
-    local input_signals = CircuitNetwork.get_input(self.entity)
+    local input_signals = CircuitNetwork.get_input(self.entity, self.filters_lookup)
 
     local max_signal
     local max_count = -math.huge
@@ -385,6 +386,12 @@ end
 
 function EnhancedCombinator:set_filter(element)
     local filter_index = tonumber(element.name:match("%d$"))
+    local old_signal = self.filters[filter_index]
+    if element.elem_value then
+        self.filters_lookup[element.elem_value.name] = true
+    elseif old_signal then
+        self.filters_lookup[old_signal.name] = nil
+    end
     self.filters[filter_index] = element.elem_value
 end
 
