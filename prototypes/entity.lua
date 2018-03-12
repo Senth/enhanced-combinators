@@ -20,6 +20,21 @@ function generate_enhanced_combinator_3(combinator)
     return combinator
 end
 
+function generate_enhanced_output_combinator_1(combinator)
+    generate_enhanced_output_combinator(combinator, 1, 250, 20)
+    return combinator
+end
+
+function generate_enhanced_output_combinator_2(combinator)
+    generate_enhanced_output_combinator(combinator, 2, 350, 50)
+    return combinator
+end
+
+function generate_enhanced_output_combinator_3(combinator)
+    generate_enhanced_output_combinator(combinator, 3, 500, 500)
+    return combinator
+end
+
 --- Generates an enhanced combinator with all variables changed
 --- @param combinator the combinator to set
 --- @param version the integer that the combinator name ends with
@@ -380,33 +395,18 @@ function generate_enhanced_combinator(combinator, version, health, energy)
     }
 end
 
-function generate_enhanced_output_combinator_1(combinator)
-    generate_enhanced_output_combinator(combinator, 1)
-    return combinator
-end
-
-function generate_enhanced_output_combinator_2(combinator)
-    generate_enhanced_output_combinator(combinator, 2)
-    return combinator
-end
-
-function generate_enhanced_output_combinator_3(combinator)
-    generate_enhanced_output_combinator(combinator, 3)
-    return combinator
-end
-
-function generate_enhanced_output_combinator(combinator, version)
+function generate_enhanced_output_combinator(combinator, version, health, output_slots)
     combinator.type = "constant-combinator"
     combinator.name = "enhanced-output-combinator-" .. version
     combinator.icon = "__enhanced-combinators__/graphics/icons/enhanced-combinator-" .. version .. ".png"
     combinator.icon_size = 32
     combinator.flags = { "placeable-neutral", "player-creation" }
     combinator.minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-output-combinator-" .. version }
-    combinator.max_health = 120
+    combinator.max_health = health
     combinator.corpse = "small-remnants"
     combinator.collision_box = { { -0.35, -0.35 }, { 0.35, 0.35 } }
     combinator.selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } }
-    combinator.item_slot_count = 500
+    combinator.item_slot_count = output_slots
     combinator.vehicle_impact_sound = { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 }
     combinator.activity_led_light =
     {

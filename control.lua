@@ -66,12 +66,12 @@ local function on_gui_opened(event)
 
     if event.gui_type == defines.gui_type.entity then
         local entity = event.entity
+        logd("opened name: " .. entity.name)
         if EnhancedCombinator.is_instance(entity) then
             local id = EnhancedCombinator.create_id_from_entity(entity)
             local combinator = enhanced_combinators[id]
 
-            if combinator and entity.valid and combinator.entity == entity then
-                combinator.entity = entity
+            if combinator and entity.valid and (combinator.entity == entity or combinator.output_entity == entity) then
                 combinator:on_gui_opened(player)
                 opened_custom_gui = true
 

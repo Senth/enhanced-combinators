@@ -176,9 +176,7 @@ function EnhancedCombinator:on_tick()
 end
 
 function EnhancedCombinator:on_tick_min()
-    local control = self.entity.get_control_behavior()
-    local input_signals = CircuitNetwork.get_input(control)
-    logd(input_signals)
+    local input_signals = CircuitNetwork.get_input(self.entity)
 
     local min_signal
     local min_count = math.huge
@@ -189,9 +187,12 @@ function EnhancedCombinator:on_tick_min()
         end
     end
 
-    CircuitNetwork.set_output_signal(control, min_signal)
-
-    logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
+    if min_signal then
+        logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
+        CircuitNetwork.set_output_signal(self.output_entity, min_signal, min_count)
+    else
+       CircuitNetwork.clear_output_signals(self.output_entity, 1)
+    end
 end
 
 function EnhancedCombinator:on_tick_max()

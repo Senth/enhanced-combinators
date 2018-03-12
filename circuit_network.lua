@@ -45,9 +45,10 @@ function add_signals(from, to)
 end
 
 --- Return the input from a control
---- @param control the control behavior from an arithmetic combinator
+--- @param input_combinator the (input) Enhanced Combinator to get all the input signal from
 --- @return all signal inputs for the combinator
-function CircuitNetwork.get_input(control)
+function CircuitNetwork.get_input(input_combinator)
+    local control = input_combinator.get_control_behavior()
     local red_input = get_signals(control, defines.wire_type.red, defines.circuit_connector_id.combinator_input)
     local green_input = get_signals(control, defines.wire_type.green, defines.circuit_connector_id.combinator_input)
 
@@ -64,14 +65,31 @@ function CircuitNetwork.get_input(control)
 end
 
 --- Set the output signal of the control parameters
---- @param control the combinator control to change the output signal for
+--- @param output_combinator the Enhanced output combinator to change the output signal for
 --- @param output_signal new output_signal
-function CircuitNetwork.set_output_signal(control, output_signal)
-    local new_parameters = control.parameters.parameters
-    new_parameters.output_signal = output_signal
-    control.parameters = {
-        parameters = new_parameters
+--- @param count the count of the new output_signal
+function CircuitNetwork.set_output_signal(output_combinator, output_signal, count)
+    CircuitNetwork.clear_output_signals(output_combinator, 1)
+    local control = output_combinator.get_control_behavior()
+    local output = {
+        signal = output_signal,
+        count = count,
     }
+    control.set_signal(1, output)
+end
+
+--- Clears all or a specific number of output signals
+--- @param output_combinator the Enhanced output combinator to clear
+--- @param number the number of fields to clear, if not specified defaults to all
+function CircuitNetwork.clear_output_signals(output_combinator, number)
+    local control = output_combinator.get_control_behavior()
+    local count = control.signals_count
+    if number then
+        count = number
+    end
+    for i = 1, count do
+        control.set_signal(i, nil)
+    end
 end
 
 --- Set the operation of the combinator
