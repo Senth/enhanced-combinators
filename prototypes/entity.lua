@@ -404,7 +404,7 @@ function generate_enhanced_output_combinator(combinator, version, health, output
     combinator.minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-combinator-" .. version }
     combinator.max_health = health
     combinator.corpse = "small-remnants"
-    combinator.collision_box = { { -0.35, -0.35 }, { 0.35, 0.35 } }
+    combinator.collision_box = { { -0.05, -0.05 }, { 0.05, 0.05 } }
     combinator.selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } }
     combinator.item_slot_count = output_slots
     combinator.vehicle_impact_sound = { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 }
@@ -422,6 +422,7 @@ function generate_enhanced_output_combinator(combinator, version, health, output
         { -0.21875, -0.46875 }
     }
     combinator.circuit_wire_max_distance = 9
+    -- TODO use enhanced combinator image so that the entity-preview works correctly
     combinator.sprites = make_4way_animation_from_spritesheet({
         layers =
         {
