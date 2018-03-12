@@ -4,7 +4,7 @@ require "common.debug"
 local inspect = require('inspect')
 
 local enhanced_combinators = {}
-
+local enhanced_output_combinator_to_enhanced_combinator = {}
 
 -- INIT
 local function on_init()
@@ -15,6 +15,7 @@ end
 
 local function on_load()
     enhanced_combinators = global.enhanced_combinators
+    enhanced_output_combinator_to_enhanced_combinator = global.enhanced_output_combinator_to_enhanced_combinator
 
     -- Recreate metatables
     local enhanced_combinator_metatable = getmetatable(EnhancedCombinator(nil))
@@ -36,10 +37,22 @@ end
 
 local function on_remove_entity(event)
     local entity = event.entity
-    if EnhancedCombinator.is_instance(entity) then
-        local entity_id = EnhancedCombinator.create_id_from_entity(entity)
-        enhanced_combinators[entity_id] = nil
-        logd("Removed Enhanced Combinator, id: " .. entity_id)
+    if EnhancedCombinator.is_input_instance(entity) then
+        local input_entity_id = EnhancedCombinator.create_any_id_from_entity(entity)
+        local enhanced_combinator = enhanced_combinators[input_entity_id]
+        local output_entity_id = EnhancedCombinator.create_any_id_from_entity(enhanced_combinator.output_entity)
+        enhanced_combinator.output_entity.destroy()
+        enhanced_combinators[input_entity_id] = nil
+        enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = nil
+        logd("Removed Enhanced Combinator, id: " .. input_entity_id)
+    elseif EnhancedCombinator.is_output_instance(entity) then
+        local output_entity_id = EnhancedCombinator.create_any_id_from_entity(entity)
+        local input_entity_id = EnhancedCombinator.create_id_from_entity(entity)
+        local enhanced_combinator = enhanced_combinators[input_entity_id]
+        enhanced_combinator.entity.destroy()
+        enhanced_combinators[input_entity_id] = nil
+        enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = nil
+        logd("Removed Enhanced Output Combinator, id: " .. output_entity_id)
     end
 end
 
@@ -91,19 +104,21 @@ local function on_gui_opened(event)
     end
 end
 
-local function on_gui_click(event)
-    logd("on_gui_click")
-    local combinator = EnhancedCombinator.get_event_combinator(event)
-    if combinator then
-        combinator:on_gui_click(event)
-    end
-end
-
 local function on_gui_changed(event)
     logd("on_gui_changed")
     local combinator = EnhancedCombinator.get_event_combinator(event)
     if combinator then
         combinator:on_gui_changed(event)
+    end
+end
+
+local function on_player_rotated_entity(event)
+    logd("on_player_rotated_entity")
+    local entity = event.entity
+    if EnhancedCombinator.is_instance(entity) then
+        local combinator_id = EnhancedCombinator.get_id_from_entity(entity)
+        local combinator = enhanced_combinators[combinator_id]
+        combinator:on_player_rotated_entity(event)
     end
 end
 
@@ -123,8 +138,8 @@ script.on_event(defines.events.on_entity_settings_pasted, on_entity_settings_pas
 
 -- GUI
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
-script.on_event(defines.events.on_gui_click, on_gui_click)
 script.on_event(defines.events.on_gui_elem_changed, on_gui_changed)
 script.on_event(defines.events.on_gui_selection_state_changed, on_gui_changed)
 script.on_event(defines.events.on_gui_text_changed, on_gui_changed)
 script.on_event(defines.events.on_gui_checked_state_changed, on_gui_changed)
+script.on_event(defines.events.on_player_rotated_entity, on_player_rotated_entity)

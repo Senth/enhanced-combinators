@@ -43,19 +43,22 @@ local TYPES_AVAILABLE = {
 }
 
 local TYPE_NAMES = {}
-TYPE_NAMES[TYPES_INACTIVE] = { "enhanced-combinator-inactive" }
-TYPE_NAMES[TYPES_MIN] = { "enhanced-combinator-min" }
-TYPE_NAMES[TYPES_MAX] = { "enhanced-combinator-max" }
-TYPE_NAMES[TYPES_SORT] = { "enhanced-combinator-sort" }
-TYPE_NAMES[TYPES_AVERAGE] = { "enhanced-combinator-average" }
-TYPE_NAMES[TYPES_MEMORY] = { "enhanced-combinator-memory" }
-TYPE_NAMES[TYPES_TIMER] = { "enhanced-combinator-timer" }
+TYPE_NAMES[TYPES_INACTIVE] = { "enhanced-combinator.inactive" }
+TYPE_NAMES[TYPES_MIN] = { "enhanced-combinator.min" }
+TYPE_NAMES[TYPES_MAX] = { "enhanced-combinator.max" }
+TYPE_NAMES[TYPES_SORT] = { "enhanced-combinator.sort" }
+TYPE_NAMES[TYPES_AVERAGE] = { "enhanced-combinator.average" }
+TYPE_NAMES[TYPES_MEMORY] = { "enhanced-combinator.memory" }
+TYPE_NAMES[TYPES_TIMER] = { "enhanced-combinator.timer" }
 
 local GUI_FUNCTION_DROPDOWN = "function-drop-down"
 local GUI_UPDATE_INTERVAL_TEXTFIELD = "update_interval-textfield"
 local GUI_FILTER_ELEM_BUTTON = "filter-"
 local GUI_FRAME_ENTITY_PREVIEW = "entity-frame"
 local GUI_FRAME_FUNCTION = "function-frame"
+
+local OUTPUT_TYPE_ONE = "1"
+local OUTPUT_TYPE_INPUT_COUNT = "2"
 
 --- Constructor
 --- @param combinator this combinator (self)
@@ -71,6 +74,7 @@ EnhancedCombinator = class(function(combinator, entity)
     combinator.update_interval = 1
     combinator.update_counter = 0
     combinator.type = TYPES_INACTIVE
+    combinator.output_state = OUTPUT_TYPE_ONE
     combinator.filters = {}
 
     -- Create output combinator
@@ -137,10 +141,18 @@ end
 
 function EnhancedCombinator.is_instance(entity)
     if entity ~= nil then
-        return string.starts(entity.name, EnhancedCombinator.get_name()) or string.starts(entity.name, EnhancedCombinator.get_output_name())
+        return EnhancedCombinator.is_input_instance(entity) or EnhancedCombinator.is_output_instance(entity)
     else
         return false
     end
+end
+
+function EnhancedCombinator.is_input_instance(entity)
+    return string.starts(entity.name, EnhancedCombinator.get_name())
+end
+
+function EnhancedCombinator.is_output_instance(entity)
+    return string.starts(entity.name, EnhancedCombinator.get_output_name())
 end
 
 function EnhancedCombinator.get_name()
@@ -189,13 +201,38 @@ function EnhancedCombinator:on_tick_min()
 
     if min_signal then
         logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
-        CircuitNetwork.set_output_signal(self.output_entity, min_signal, min_count)
+        local count = min_count
+        if self.output_type == OUTPUT_TYPE_ONE then
+            count = 1
+        end
+        CircuitNetwork.set_output_signal(self.output_entity, min_signal, count)
     else
-       CircuitNetwork.clear_output_signals(self.output_entity, 1)
+        CircuitNetwork.clear_output_signals(self.output_entity, 1)
     end
 end
 
 function EnhancedCombinator:on_tick_max()
+    local input_signals = CircuitNetwork.get_input(self.entity)
+
+    local max_signal
+    local max_count = -math.huge
+    for signal_name, signal_info in pairs(input_signals) do
+        if signal_info.count > max_count then
+            max_signal = signal_info.signal
+            max_count = signal_info.count
+        end
+    end
+
+    if max_signal then
+        logd("Max signal: " .. max_signal.name .. ", with count: " .. max_count)
+        local count = max_count
+        if self.output_type == OUTPUT_TYPE_ONE then
+            count = 1
+        end
+        CircuitNetwork.set_output_signal(self.output_entity, max_signal, count)
+    else
+        CircuitNetwork.clear_output_signals(self.output_entity, 1)
+    end
 end
 
 function EnhancedCombinator:on_tick_sort()
@@ -208,6 +245,10 @@ function EnhancedCombinator:on_tick_timer()
 end
 
 function EnhancedCombinator:on_tick_memory()
+end
+
+function EnhancedCombinator:on_player_rotated_entity(event)
+    -- TODO
 end
 
 function EnhancedCombinator.get_event_combinator(event)
@@ -244,6 +285,7 @@ function EnhancedCombinator:create_optional_frames(window)
     logd("Create optional frames")
     self:gui_create_filter_frame(window)
     self:gui_create_update_interval_frame(window)
+    self:gui_create_output_frame(window)
 end
 
 function EnhancedCombinator:on_gui_click(event)
@@ -305,10 +347,23 @@ function EnhancedCombinator:on_gui_changed(event)
         -- Switch-case functionality
         local action = {
             [GUI_FUNCTION_DROPDOWN] = function(self, element) self:switch_function(element) end,
-            [GUI_UPDATE_INTERVAL_TEXTFIELD] = function(self, element) self:set_update_interval(element) end
+            [GUI_UPDATE_INTERVAL_TEXTFIELD] = function(self, element) self:set_update_interval(element) end,
+            [OUTPUT_TYPE_ONE] = function(self, element) self:set_output_type(element, OUTPUT_TYPE_ONE) end,
+            [OUTPUT_TYPE_INPUT_COUNT] = function(self, element) self:set_output_type(element, OUTPUT_TYPE_INPUT_COUNT) end
         }
 
         action[element.name](self, element)
+    end
+end
+
+function EnhancedCombinator:set_output_type(element, output_type)
+    self.output_type = output_type
+
+    -- Uncheck the other radio button
+    for k, radiobutton in pairs(element.parent.children) do
+        if radiobutton.name ~= output_type then
+            radiobutton.state = false
+        end
     end
 end
 
@@ -347,7 +402,7 @@ function EnhancedCombinator:gui_create_window(player)
 
     local window = player.gui.center.add({ type = "table", name = gui_name, column_count = 1, style = "enhanced-combinators-window" })
 
-    local locale_name = { "enhanced-combinator-name-" .. self.version }
+    local locale_name = { "entity-name.enhanced-combinator-" .. self.version }
     local header = window.add({ type = "frame", name = GUI_FRAME_ENTITY_PREVIEW, caption = locale_name, style = "enhanced-combinators-frame" })
     local entity_preview = header.add { type = "entity-preview", name = "entity-preview" }
     entity_preview.entity = self.entity
@@ -356,7 +411,7 @@ function EnhancedCombinator:gui_create_window(player)
 end
 
 function EnhancedCombinator:gui_create_function_frame(window)
-    self.function_frame = window.add({ type = "frame", name = GUI_FRAME_FUNCTION, caption = { "enhanced-combinator-function" }, style = "enhanced-combinators-frame" })
+    self.function_frame = window.add({ type = "frame", name = GUI_FRAME_FUNCTION, caption = { "enhanced-combinator.function" }, style = "enhanced-combinators-frame" })
 
     local available_functions = {}
     local selected_index = 0
@@ -373,7 +428,7 @@ end
 --- Create filters frame. One row for version 1, two for version 2, three for 3.
 function EnhancedCombinator:gui_create_filter_frame(window)
     if self:is_filter_functionality() then
-        local filter_frame = window.add({ type = "frame", name = "filter-frame", caption = { "enhanced-combinator-filters" }, style = "enhanced-combinators-frame" })
+        local filter_frame = window.add({ type = "frame", name = "filter-frame", caption = { "gui-control-behavior-modes.set-filters" }, style = "enhanced-combinators-frame" })
         local filter_table = filter_frame.add({ type = "table", name = "filter-table", column_count = 6, style = "enhanced-combinators-filter-table" })
 
         local rows = self.version
@@ -396,7 +451,7 @@ end
 
 function EnhancedCombinator:gui_create_update_interval_frame(window)
     if self:is_update_interval_functionality() then
-        local update_interval_frame = window.add({ type = "frame", name = "update-interval-frame", caption = { "enhanced-combinator-update-interval" }, style = "enhanced-combinators-frame" })
+        local update_interval_frame = window.add({ type = "frame", name = "update-interval-frame", caption = { "enhanced-combinator.update-interval" }, style = "enhanced-combinators-frame" })
 
         update_interval_frame.add({ type = "label", name = "every_label", caption = "Every" })
         local textfield = update_interval_frame.add({ type = "textfield", name = GUI_UPDATE_INTERVAL_TEXTFIELD, style = "enhanced-combinators-update-interval-textfield" })
@@ -411,4 +466,20 @@ function EnhancedCombinator:is_update_interval_functionality()
             self.type == TYPES_SORT or
             self.type == TYPES_AVERAGE or
             self.type == TYPES_MEMORY
+end
+
+function EnhancedCombinator:gui_create_output_frame(window)
+    if self:is_output_functionality() then
+        local output_frame = window.add({ type = "frame", name = "output-frame", caption = { "gui-decider.output-item" }, style = "enhanced-combinators-frame" })
+
+        -- TODO radio buttons
+--    logd("output state: " .. self.output_type)
+        local radio_1 = output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_ONE, caption = { "gui-decider.one" }, tooltip = { "gui-decider.one-description" }, state = self.output_type == OUTPUT_TYPE_ONE })
+        output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_INPUT_COUNT, caption = { "gui-decider.input-count" }, tooltip = { "gui-decider.input-count-description" }, state = self.output_type == OUTPUT_TYPE_INPUT_COUNT })
+    end
+end
+
+function EnhancedCombinator:is_output_functionality()
+    return self.type == TYPES_MIN or
+            self.type == TYPES_MAX
 end

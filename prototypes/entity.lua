@@ -401,7 +401,7 @@ function generate_enhanced_output_combinator(combinator, version, health, output
     combinator.icon = "__enhanced-combinators__/graphics/icons/enhanced-combinator-" .. version .. ".png"
     combinator.icon_size = 32
     combinator.flags = { "placeable-neutral", "player-creation" }
-    combinator.minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-output-combinator-" .. version }
+    combinator.minable = { hardness = 0.2, mining_time = 0.5, result = "enhanced-combinator-" .. version }
     combinator.max_health = health
     combinator.corpse = "small-remnants"
     combinator.collision_box = { { -0.35, -0.35 }, { 0.35, 0.35 } }
