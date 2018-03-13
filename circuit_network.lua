@@ -1,4 +1,4 @@
-require "debug"
+local Debug = require "debug"
 
 local CircuitNetwork = {}
 
@@ -7,13 +7,13 @@ local CircuitNetwork = {}
 --- @param wire the red or green wire to get the signals from. @see defines.wire_type
 --- @param circuit_connector input or output of the circuit control network @see defines.circuit_connector_id
 --- @return all signals from the specified wire and circuit connector
-function get_signals(control, wire, circuit_connector)
+local function get_signals(control, wire, circuit_connector)
     if wire ~= defines.wire_type.red and wire ~= defines.wire_type.green then
-        logw("Invalid wire type: " .. wire)
+        Debug.logw("Invalid wire type: " .. wire)
         return
     end
     if circuit_connector ~= defines.circuit_connector_id.combinator_input and circuit_connector ~= defines.circuit_connector_id.combinator_output then
-        logw("Invalid circuit_connector_id: " .. circuit_connector)
+        Debug.logw("Invalid circuit_connector_id: " .. circuit_connector)
         return
     end
 
@@ -27,23 +27,30 @@ end
 --- @param from the signal array to add from
 --- @param to the array to add to
 --- @param filters (optional) filters. Only these signal will be added to the 'to' table
-function add_signals(from, to, filters)
+local function add_signals(from, to, filters)
+    local has_filters = false
+    if filters then
+        for signal_name, value in pairs(filters) do
+            if value then
+                has_filters = true
+                break
+            end
+        end
+    end
+
+
     for k, signal_container in pairs(from) do
         local signal = signal_container.signal
         local id = signal.name
         local count = signal_container.count
         local add_signal = true
-        if filters then
+        if has_filters then
             if filters[id] == nil then
-                logd("Don't use signal: " .. id)
                 add_signal = false
-            else
-                logd("Use signal: " .. id)
             end
         end
         if add_signal then
             if to[id] ~= nil then
-                logd("Updating count to " .. (to[id].count + count))
                 to[id].count = to[id].count + count
             else
                 local signal_info = {
@@ -89,6 +96,19 @@ function CircuitNetwork.set_output_signal(output_combinator, output_signal, coun
         count = count,
     }
     control.set_signal(1, output)
+end
+
+--- Set output signals
+--- @param output_combinator the Enhanced output combinator to change the output signal for
+--- @param signals array with all the output signals.
+function CircuitNetwork.set_output_signals(output_combinator, signals)
+    CircuitNetwork.clear_output_signals(output_combinator)
+    local control = output_combinator.get_control_behavior()
+    local i = 0
+    for k, value in pairs(signals) do
+        i = i + 1
+        control.set_signal(i, value)
+    end
 end
 
 --- Clears all or a specific number of output signals

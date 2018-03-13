@@ -1,6 +1,6 @@
 require "common.class"
-require "common.debug"
 require "common.string"
+local Debug = require "common.debug"
 local CircuitNetwork = require "circuit_network"
 
 local GUI_NAME_PREFIX = "enhanced-combinator-gui_"
@@ -29,16 +29,24 @@ local TYPES_AVAILABLE = {
         TYPES_INACTIVE,
         TYPES_MIN,
         TYPES_MAX,
+        TYPES_TIMER,
     },
     [2] = {
         TYPES_INACTIVE,
         TYPES_MIN,
         TYPES_MAX,
+        TYPES_TIMER,
+        TYPES_SORT,
+        TYPES_AVERAGE,
     },
     [3] = {
         TYPES_INACTIVE,
         TYPES_MIN,
         TYPES_MAX,
+        TYPES_TIMER,
+        TYPES_SORT,
+        TYPES_AVERAGE,
+        TYPES_MEMORY,
     }
 }
 
@@ -54,40 +62,39 @@ TYPE_NAMES[TYPES_TIMER] = { "enhanced-combinator.timer" }
 local GUI_FUNCTION_DROPDOWN = "function-drop-down"
 local GUI_UPDATE_INTERVAL_TEXTFIELD = "update_interval-textfield"
 local GUI_FILTER_ELEM_BUTTON = "filter-"
+local GUI_OUTPUT_SIGNAL = "output-signal"
 local GUI_FRAME_ENTITY_PREVIEW = "entity-frame"
 local GUI_FRAME_FUNCTION = "function-frame"
 
-local OUTPUT_TYPE_ONE = "1"
-local OUTPUT_TYPE_INPUT_COUNT = "2"
+
+local OUTPUT_TYPE_ONE = "OUTPUT_ONE"
+local OUTPUT_TYPE_INPUT_COUNT = "OUTPUT_TWO"
+
+local SORT_ASC = "SORT_ASC"
+local SORT_DESC = "SORT_DESC"
 
 --- Constructor
 --- @param combinator this combinator (self)
 --- @param entity the entity that was placed
-EnhancedCombinator = class(function(combinator, entity)
+local EnhancedCombinator = class(function(combinator, entity)
     combinator.entity = entity
     if entity ~= nil then
         combinator.id = EnhancedCombinator.create_id_from_entity(entity)
         combinator.name = entity.name
         combinator.version = tonumber(string.sub(entity.name, -1))
-        logd(combinator.name .. ", version: " .. combinator.version)
+        Debug.logd(combinator.name .. ", version: " .. combinator.version)
     end
     combinator.update_interval = 1
     combinator.update_counter = 0
     combinator.type = TYPES_INACTIVE
-    combinator.output_state = OUTPUT_TYPE_ONE
+    combinator.output_type = OUTPUT_TYPE_ONE
+    combinator.output_signal = nil
     combinator.filters = {}
     combinator.filters_lookup = {}
 
     -- Create output combinator
     if entity ~= nil then
         EnhancedCombinator.create_output_combinator(combinator, entity)
-        -- Link output combinator to enhanced combinator
-        --        if combinator.output_entity then
-        --            local output_entity_id = EnhancedCombinator.create_any_id_from_entity(combinator.output_entity)
-        --            global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = combinator.id
-        --        else
-        --            loge("Couldn't create Enhanced output combinator")
-        --        end
     end
 end)
 
@@ -129,7 +136,7 @@ function EnhancedCombinator:create_output_combinator(entity)
         local output_entity_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
         global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = self.id
     else
-        loge("Couldn't create Enhanced output combinator")
+        Debug.loge("Couldn't create Enhanced output combinator")
     end
 end
 
@@ -173,6 +180,10 @@ end
 
 function EnhancedCombinator:on_tick()
     if self.type ~= TYPES_INACTIVE then
+        -- Special case for clearing timer output
+        if self.type == TYPES_TIMER and self.update_interval >= 0 and self.update_counter == 0 then
+            CircuitNetwork.clear_output_signals(self.output_entity, 1)
+        end
         self.update_counter = self.update_counter + 1
 
         if self.update_counter >= self.update_interval then
@@ -208,7 +219,7 @@ function EnhancedCombinator:on_tick_min()
     end
 
     if min_signal then
-        logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
+        Debug.logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
         local count = min_count
         if self.output_type == OUTPUT_TYPE_ONE then
             count = 1
@@ -232,7 +243,7 @@ function EnhancedCombinator:on_tick_max()
     end
 
     if max_signal then
-        logd("Max signal: " .. max_signal.name .. ", with count: " .. max_count)
+        Debug.logd("Max signal: " .. max_signal.name .. ", with count: " .. max_count)
         local count = max_count
         if self.output_type == OUTPUT_TYPE_ONE then
             count = 1
@@ -244,15 +255,67 @@ function EnhancedCombinator:on_tick_max()
 end
 
 function EnhancedCombinator:on_tick_sort()
+    local input_signals = CircuitNetwork.get_input(self.entity, self.filters_lookup)
+
+    local signal_array = {}
+    for signal_name, signal_info in pairs(input_signals) do
+        table.insert(signal_array, signal_info)
+    end
+
+    -- ASC
+    if self.sort_order == SORT_ASC then
+        table.sort(signal_array, function(a, b) return a.count < b.count end)
+    else
+        table.sort(signal_array, function(a, b) return a.count > b.count end)
+    end
+
+    for i, signal_info in pairs(signal_array) do
+        signal_info.count = i
+    end
+
+    CircuitNetwork.set_output_signals(self.output_entity, signal_array)
 end
 
 function EnhancedCombinator:on_tick_average()
+    if self.output_signal then
+        local input_signals = CircuitNetwork.get_input(self.entity, self.filters_lookup)
+
+        local sum = 0
+        local item_count = 0
+        for signal_name, signal_info in pairs(input_signals) do
+            sum = sum + signal_info.count
+            item_count = item_count + 1
+        end
+
+        local average = sum / item_count
+        CircuitNetwork.set_output_signal(self.output_entity, self.output_signal, average)
+    else
+        CircuitNetwork.clear_output_signals(self.output_entity, 1)
+    end
 end
 
 function EnhancedCombinator:on_tick_timer()
+    if self.output_signal then
+        local count = 0
+        if self.output_type == OUTPUT_TYPE_INPUT_COUNT then
+            local input_signals = CircuitNetwork.get_input(self.entity)
+
+            local filtered_input_singnal = input_signals[self.output_signal.name]
+            if filtered_input_singnal then
+                count = filtered_input_singnal.count
+                end
+        else
+            count = 1
+        end
+        CircuitNetwork.set_output_signal(self.output_entity, self.output_signal, count)
+    else
+        CircuitNetwork.clear_output_signals(self.output_entity, 1)
+    end
 end
 
 function EnhancedCombinator:on_tick_memory()
+    local input_signals = CircuitNetwork.get_input(self.entity, self.filters_lookup)
+    CircuitNetwork.set_output_signals(self.output_entity, input_signals)
 end
 
 function EnhancedCombinator:on_player_rotated_entity(event)
@@ -299,9 +362,10 @@ function EnhancedCombinator:on_gui_opened(player)
 end
 
 function EnhancedCombinator:create_optional_frames(window)
-    logd("Create optional frames")
+    Debug.logd("Create optional frames")
     self:gui_create_filter_frame(window)
     self:gui_create_update_interval_frame(window)
+    self:gui_create_sort_frame(window)
     self:gui_create_output_frame(window)
 end
 
@@ -316,9 +380,12 @@ function EnhancedCombinator:switch_function(dropdown_element)
     self.type = TYPES_AVAILABLE[self.version][selected_index]
 
     -- Update combinator display sprite
-    logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
+    Debug.logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
     local control = self.entity.get_or_create_control_behavior()
     CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
+
+    -- Clear output signals
+    CircuitNetwork.clear_output_signals(self.output_entity)
 
     -- Update GUI frames
     local root_window = self:get_root_window(dropdown_element)
@@ -355,7 +422,6 @@ end
 function EnhancedCombinator:on_gui_changed(event)
     local element = event.element
     local element_name = element.name
-    logd(element_name .. " - " .. self.id)
 
     -- Special case for filter functionality
     if string.starts(element_name, GUI_FILTER_ELEM_BUTTON) then
@@ -366,15 +432,33 @@ function EnhancedCombinator:on_gui_changed(event)
             [GUI_FUNCTION_DROPDOWN] = function(self, element) self:switch_function(element) end,
             [GUI_UPDATE_INTERVAL_TEXTFIELD] = function(self, element) self:set_update_interval(element) end,
             [OUTPUT_TYPE_ONE] = function(self, element) self:set_output_type(element, OUTPUT_TYPE_ONE) end,
-            [OUTPUT_TYPE_INPUT_COUNT] = function(self, element) self:set_output_type(element, OUTPUT_TYPE_INPUT_COUNT) end
+            [OUTPUT_TYPE_INPUT_COUNT] = function(self, element) self:set_output_type(element, OUTPUT_TYPE_INPUT_COUNT) end,
+            [GUI_OUTPUT_SIGNAL] = function(self, element) self.output_signal = element.elem_value end,
+            [SORT_ASC] = function(self, element) self:set_sort_order(element, SORT_ASC) end,
+            [SORT_DESC] = function(self, element) self:set_sort_order(element, SORT_DESC) end,
         }
 
         action[element.name](self, element)
+    end
+
+    -- Reset output counter
+    self.update_counter = self.update_interval
+end
+
+function EnhancedCombinator:set_sort_order(element, sort_order)
+    self.sort_order = sort_order
+
+    -- Uncheck the other radio button
+    for k, radiobutton in pairs(element.parent.children) do
+        if radiobutton.name ~= sort_order then
+            radiobutton.state = false
+        end
     end
 end
 
 function EnhancedCombinator:set_output_type(element, output_type)
     self.output_type = output_type
+    Debug.logd("Output type: " .. output_type)
 
     -- Uncheck the other radio button
     for k, radiobutton in pairs(element.parent.children) do
@@ -486,23 +570,50 @@ end
 function EnhancedCombinator:is_update_interval_functionality()
     return self.type == TYPES_MIN or
             self.type == TYPES_MAX or
+            self.type == TYPES_TIMER or
             self.type == TYPES_SORT or
             self.type == TYPES_AVERAGE or
             self.type == TYPES_MEMORY
 end
 
+function EnhancedCombinator:gui_create_sort_frame(window)
+    if self:is_sort_functionality() then
+        local sort_frame = window.add({ type = "frame", name = "sort-frame", caption = { "enhanced-combinator.sort" }, style = "enhanced-combinators-frame" })
+
+        sort_frame.add({ type = "radiobutton", name = SORT_ASC, caption = { "enhanced-combinator.sort-asc" }, tooltip = { "enhanced-combinator.sort-asc-description" }, state = self.sort_order == SORT_ASC })
+        sort_frame.add({ type = "radiobutton", name = SORT_DESC, caption = { "enhanced-combinator.sort-desc" }, tooltip = { "enhanced-combinator.sort-desc-description" }, state = self.sort_order == SORT_DESC })
+    end
+end
+
+function EnhancedCombinator:is_sort_functionality()
+    return self.type == TYPES_SORT
+end
+
 function EnhancedCombinator:gui_create_output_frame(window)
-    if self:is_output_functionality() then
+    if self:is_output_functionality() or self:is_output_signal_functionality() then
         local output_frame = window.add({ type = "frame", name = "output-frame", caption = { "gui-decider.output-item" }, style = "enhanced-combinators-frame" })
 
-        -- TODO radio buttons
-        --    logd("output state: " .. self.output_type)
-        local radio_1 = output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_ONE, caption = { "gui-decider.one" }, tooltip = { "gui-decider.one-description" }, state = self.output_type == OUTPUT_TYPE_ONE })
-        output_frame.add({ type = "radiobutton", name = OUTPUT_TYPE_INPUT_COUNT, caption = { "gui-decider.input-count" }, tooltip = { "gui-decider.input-count-description" }, state = self.output_type == OUTPUT_TYPE_INPUT_COUNT })
+        if self:is_output_signal_functionality() then
+            output_frame.add({ type = "choose-elem-button", name = GUI_OUTPUT_SIGNAL, elem_type = "signal", signal = self.output_signal })
+        end
+
+        if self:is_output_functionality() then
+            local output_table = output_frame.add({ type = "table", name = "output_table", column_count = 1, style = "enhanced-combinators-radio-table" })
+            output_table.add({ type = "radiobutton", name = OUTPUT_TYPE_ONE, caption = { "gui-decider.one" }, tooltip = { "gui-decider.one-description" }, state = self.output_type == OUTPUT_TYPE_ONE })
+            output_table.add({ type = "radiobutton", name = OUTPUT_TYPE_INPUT_COUNT, caption = { "gui-decider.input-count" }, tooltip = { "gui-decider.input-count-description" }, state = self.output_type == OUTPUT_TYPE_INPUT_COUNT })
+        end
     end
 end
 
 function EnhancedCombinator:is_output_functionality()
     return self.type == TYPES_MIN or
-            self.type == TYPES_MAX
+            self.type == TYPES_MAX or
+            self.type == TYPES_TIMER
 end
+
+function EnhancedCombinator:is_output_signal_functionality()
+    return self.type == TYPES_AVERAGE or
+            self.type == TYPES_TIMER
+end
+
+return EnhancedCombinator

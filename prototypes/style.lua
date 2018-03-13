@@ -14,6 +14,12 @@ default["enhanced-combinators-filter-table"] = {
     vertical_spacing = 2,
 }
 
+default["enhanced-combinators-radio-table"] = {
+    type = "table_style",
+    parent = "table",
+    vertical_spacing = 0,
+}
+
 default["enhanced-combinators-frame"] = {
     type = "frame_style",
     parent = "frame",
