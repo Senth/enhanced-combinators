@@ -1,10 +1,7 @@
 local EnhancedCombinator = require "enhanced_combinator"
 local Debug = require "common.debug"
 
-local inspect = require('inspect')
-
 local enhanced_combinators = {}
-local enhanced_combinators_opened_guis = {}
 local enhanced_output_combinator_to_enhanced_combinator = {}
 
 -- INIT
@@ -16,7 +13,6 @@ end
 
 local function on_load()
     enhanced_combinators = global.enhanced_combinators
-    enhanced_combinators_opened_guis = global.enhanced_combinators_opened_guis
     enhanced_output_combinator_to_enhanced_combinator = global.enhanced_output_combinator_to_enhanced_combinator
 
     -- Recreate metatables
