@@ -21,17 +21,17 @@ function generate_enhanced_combinator_3(combinator)
 end
 
 function generate_enhanced_output_combinator_1(combinator)
-    generate_enhanced_output_combinator(combinator, 1, 250, 20)
+    generate_enhanced_output_combinator(combinator, 1, 250, 12)
     return combinator
 end
 
 function generate_enhanced_output_combinator_2(combinator)
-    generate_enhanced_output_combinator(combinator, 2, 350, 50)
+    generate_enhanced_output_combinator(combinator, 2, 350, 24)
     return combinator
 end
 
 function generate_enhanced_output_combinator_3(combinator)
-    generate_enhanced_output_combinator(combinator, 3, 500, 200)
+    generate_enhanced_output_combinator(combinator, 3, 500, 48)
     return combinator
 end
 
@@ -101,49 +101,6 @@ function generate_enhanced_combinator(combinator, version, health, energy)
     combinator.circuit_wire_max_distance = 9
 
     -- SPRITES
-    local default_display_sprite = {
-        north =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            y = 22 * (version - 1),
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -4.5),
-        },
-        east =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            y = 22 * (version - 1),
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -10.5),
-        },
-        south =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            y = 22 * (version - 1),
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -4.5),
-        },
-        west =
-        {
-            scale = 0.5,
-            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
-            x = 30,
-            y = 22 * (version - 1),
-            width = 30,
-            height = 22,
-            shift = util.by_pixel(0, -10.5),
-        },
-    }
-
     combinator.sprites = make_4way_animation_from_spritesheet({
         layers = {
             {
@@ -325,13 +282,177 @@ function generate_enhanced_combinator(combinator, version, health, energy)
         },
     }
     -- TODO Sort
-    combinator.divide_symbol_sprites = default_display_sprite
+    combinator.divide_symbol_sprites =
+    {
+        north =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        east =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+        south =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        west =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 30,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+    }
     -- TODO Average
-    combinator.modulo_symbol_sprites = default_display_sprite
+    combinator.modulo_symbol_sprites =
+    {
+        north =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 60,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        east =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 60,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+        south =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 60,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        west =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 60,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+    }
     -- TODO Memory
-    combinator.power_symbol_sprites = default_display_sprite
+    combinator.power_symbol_sprites =
+    {
+        north =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 90,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        east =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 90,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+        south =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 90,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        west =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            x = 90,
+            y = 22,
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+    }
 
     -- Set the others sprites to default E
+    local default_display_sprite = {
+        north =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            y = 22 * (version - 1),
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        east =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            y = 22 * (version - 1),
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+        south =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            y = 22 * (version - 1),
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -4.5),
+        },
+        west =
+        {
+            scale = 0.5,
+            filename = "__enhanced-combinators__/graphics/entity/hr-enhanced-combinator-displays.png",
+            y = 22 * (version - 1),
+            width = 30,
+            height = 22,
+            shift = util.by_pixel(0, -10.5),
+        },
+    }
     combinator.multiply_symbol_sprites = default_display_sprite
     combinator.right_shift_symbol_sprites = default_display_sprite
     combinator.and_symbol_sprites = default_display_sprite
