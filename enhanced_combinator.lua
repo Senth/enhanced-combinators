@@ -127,7 +127,7 @@ local function create_output_combinator(enhanced_combinator)
         }
     end
     enhanced_combinator.output_entity = entity.surface.create_entity {
-        name = "enhanced-output-combinator-" .. enhanced_combinator.version,
+        name = OUTPUT_COMBINATOR_NAME .. "-" .. enhanced_combinator.version,
         position = output_position,
         direction = direction,
         force = entity.force,
@@ -317,7 +317,6 @@ function EnhancedCombinator:on_tick_min()
     end
 
     if min_signal then
-        Debug.logd("Min signal: " .. min_signal.name .. ", with count: " .. min_count)
         local count = min_count
         if self.output_type == OUTPUT_TYPE_ONE then
             count = 1
@@ -341,7 +340,6 @@ function EnhancedCombinator:on_tick_max()
     end
 
     if max_signal then
-        Debug.logd("Max signal: " .. max_signal.name .. ", with count: " .. max_count)
         local count = max_count
         if self.output_type == OUTPUT_TYPE_ONE then
             count = 1
@@ -417,16 +415,28 @@ function EnhancedCombinator:on_tick_memory()
 end
 
 function EnhancedCombinator:on_player_rotated_entity(event)
-    -- Rotate Enhanced (input) combinator
-    if self.is_output_instance(event.entity) then
+    Debug.logi({ "enhanced-combinator.rotation-disabled-info" })
+
+    -- Revert the rotation
+    if self.is_input_instance(event.entity) then
         self.entity.rotate()
+    else
+        while self.output_entity.direction ~= self.entity.direction do
+            self.output_entity.rotate()
+        end
     end
 
-    -- Move output combinator. Can only be accomplished by removing and the recreating the entity
-    local output_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
-    global.enhanced_output_combinator_to_enhanced_combinator[output_id] = nil
-    self.output_entity.destroy()
-    create_output_combinator(self)
+    -- !!! DISABLED as we cannot connect a new wire to the output combinator
+    --    -- Rotate Enhanced (input) combinator
+    --    if self.is_output_instance(event.entity) then
+    --        self.entity.rotate()
+    --    end
+    --
+    --    -- Move output combinator. Can only be accomplished by removing and the recreating the entity
+    --    local output_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
+    --    global.enhanced_output_combinator_to_enhanced_combinator[output_id] = nil
+    --    self.output_entity.destroy()
+    --    create_output_combinator(self)
 end
 
 function EnhancedCombinator.get_event_combinator(event)
@@ -460,7 +470,6 @@ function EnhancedCombinator:on_gui_opened(player)
 end
 
 function EnhancedCombinator:create_optional_frames(window)
-    Debug.logd("Create optional frames")
     self:gui_create_filter_frame(window)
     self:gui_create_update_interval_frame(window)
     self:gui_create_sort_frame(window)
@@ -474,7 +483,6 @@ function EnhancedCombinator:switch_function(dropdown_element)
     self.type = TYPES_AVAILABLE[self.version][selected_index]
 
     -- Update combinator display sprite
-    Debug.logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
     local control = self.entity.get_control_behavior()
     CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
 
@@ -552,7 +560,6 @@ end
 
 function EnhancedCombinator:set_output_type(element, output_type)
     self.output_type = output_type
-    Debug.logd("Output type: " .. output_type)
 
     -- Uncheck the other radio button
     for k, radiobutton in pairs(element.parent.children) do
@@ -564,7 +571,6 @@ end
 
 function EnhancedCombinator:set_filter(element)
     local filter_index = tonumber(element.name:match("%d+$"))
-    Debug.logd("Set filter: " .. filter_index)
     local old_signal = self.filters[filter_index]
     if element.elem_value then
         self.filters_lookup[element.elem_value.name] = true

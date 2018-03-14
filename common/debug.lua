@@ -9,11 +9,33 @@ local DEBUG_LEVEL = DEBUG
 
 local Debug = {}
 
-function print(text)
+local function print(text)
     if type(text) == "string" then
         game.print(text)
     else
-        game.print(Inspect(text))
+        -- Localized string
+        local printed = false
+        if type(text) == "table" then
+            local is_array_of_length_one = false
+            for k, v in pairs(text) do
+                if k == 1 then
+                    is_array_of_length_one = true
+                else
+                    is_array_of_length_one = false
+                    break
+                end
+            end
+
+            if is_array_of_length_one and type(text[1]) == "string" then
+                printed = true
+                game.print(text)
+            end
+        end
+
+
+        if not printed then
+            game.print(Inspect(text))
+        end
     end
 end
 

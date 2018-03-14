@@ -26,10 +26,31 @@ end
 -- ENTITY
 local function on_built_entity(event)
     local entity = event.created_entity
-    if EnhancedCombinator.is_instance(entity) then
+    if EnhancedCombinator.is_input_instance(entity) then
         local enhanced_combinator = EnhancedCombinator(entity)
         enhanced_combinators[enhanced_combinator.id] = enhanced_combinator
         Debug.logd("Placed Enhanced Combinator, name: " .. entity.name .. ", id: " .. enhanced_combinator.id)
+    elseif EnhancedCombinator.is_output_instance(entity) then
+        Debug.logw({"enhanced-combinator.placed-output-combinator-warning"})
+        -- In creative mode, or with a creative mod it's possible to place the output combinator
+        -- Espacially when doing a blueprint of the combinator and placing it
+        -- In this case we just want to remove it, and instead build a regular Enhanced Combinator in the place
+
+        local version = tonumber(string.match(entity.name, "%d$"))
+        local enhanced_combinator_entity = entity.surface.create_entity {
+            name = EnhancedCombinator.get_name() .. "-" .. version,
+            position = entity.position,
+            direction = entity.direction,
+            force = entity.force,
+        }
+
+        entity.destroy()
+
+        if enhanced_combinator_entity then
+            Debug.logd(enhanced_combinator_entity.name)
+            local enhanced_combinator = EnhancedCombinator(enhanced_combinator_entity)
+            enhanced_combinators[enhanced_combinator.id] = enhanced_combinator
+        end
     end
 end
 
@@ -87,6 +108,11 @@ local function on_entity_died(event)
         -- TODO
     end
     Debug.logd("on_entity_settings_pasted")
+end
+
+local function on_player_setup_blueprint(event)
+    Debug.logd("Player blueprint setup:")
+    Debug.logd(event)
 end
 
 
@@ -155,6 +181,7 @@ script.on_event(defines.events.on_tick, on_tick)
 script.on_event(defines.events.on_entity_settings_pasted, on_entity_settings_pasted)
 script.on_event(defines.events.on_entity_damaged, on_entity_damaged)
 script.on_event(defines.events.on_entity_died, on_entity_died)
+script.on_event(defines.events.on_player_setup_blueprint, on_player_setup_blueprint)
 
 -- GUI
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
