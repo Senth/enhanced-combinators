@@ -104,10 +104,16 @@ end
 function CircuitNetwork.set_output_signals(output_combinator, signals)
     CircuitNetwork.clear_output_signals(output_combinator)
     local control = output_combinator.get_control_behavior()
+    local max_signals = control.signals_count
     local i = 0
     for k, value in pairs(signals) do
         i = i + 1
         control.set_signal(i, value)
+
+        -- Reached max number of signals
+        if i == max_signals then
+            break
+        end
     end
 end
 
@@ -117,7 +123,7 @@ end
 function CircuitNetwork.clear_output_signals(output_combinator, number)
     local control = output_combinator.get_control_behavior()
     local count = control.signals_count
-    if number then
+    if number and number < count then
         count = number
     end
     for i = 1, count do

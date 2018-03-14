@@ -23,7 +23,7 @@ local TYPE_SPRITES = {
     [TYPES_TIMER] = "<<",
 }
 
---- The different types available for the three different combinator versions
+--- The functionalty available for the three different combinator versions
 local TYPES_AVAILABLE = {
     [1] = {
         TYPES_INACTIVE,
@@ -73,34 +73,36 @@ local OUTPUT_TYPE_INPUT_COUNT = "OUTPUT_TWO"
 local SORT_ASC = "SORT_ASC"
 local SORT_DESC = "SORT_DESC"
 
---- Constructor
---- @param combinator this combinator (self)
---- @param entity the entity that was placed
-local EnhancedCombinator = class(function(combinator, entity)
-    combinator.entity = entity
-    if entity ~= nil then
-        combinator.id = EnhancedCombinator.create_id_from_entity(entity)
-        combinator.name = entity.name
-        combinator.version = tonumber(string.sub(entity.name, -1))
-        Debug.logd(combinator.name .. ", version: " .. combinator.version)
-    end
-    combinator.update_interval = 1
-    combinator.update_counter = 0
-    combinator.type = TYPES_INACTIVE
-    combinator.output_type = OUTPUT_TYPE_ONE
-    combinator.output_signal = nil
-    combinator.filters = {}
-    combinator.filters_lookup = {}
+local AVERAGE_TYPE_MEAN = "mean"
 
-    -- Create output combinator
-    if entity ~= nil then
-        EnhancedCombinator.create_output_combinator(combinator, entity)
-    end
-end)
+local INPUT_COMBINATOR_NAME = "enhanced-combinator"
+local OUTPUT_COMBINATOR_NAME = "enhanced-output-combinator"
 
---- Create an output combinator that is linked to an enhanced combinator
---- @param entity Enhanced Combinator entity
-function EnhancedCombinator:create_output_combinator(entity)
+local FILTERS_PER_VERSION = 6
+
+
+-- Need to create a local function of it so we can access it in the constructor
+local function create_any_id_from_entity(entity)
+    return entity.surface.name .. ":" .. entity.position.x .. ";" .. entity.position.y
+end
+
+-- Need to create a local function of it so we can access it in the constructor
+local function create_id_from_entity(entity)
+    if string.starts(entity.name, INPUT_COMBINATOR_NAME) then
+        return create_any_id_from_entity(entity)
+    elseif string.starts(entity.name, OUTPUT_COMBINATOR_NAME) then
+        -- Get the enhanced combinator rather than the enhanced-output-combinator
+        local output_id = create_any_id_from_entity(entity)
+        return global.enhanced_output_combinator_to_enhanced_combinator[output_id]
+    end
+end
+
+--- Create an output combinator that is linked to an enhanced combinator.
+--- @note This needs to be a local function that isn't part of EnhancedCombinator so we can access it in the
+--- constructor.
+--- @param enhanced_combinator the enhanced combinator to use
+local function create_output_combinator(enhanced_combinator)
+    local entity = enhanced_combinator.entity
     local direction = entity.direction
     local output_position
     if direction == defines.direction.north then
@@ -124,34 +126,53 @@ function EnhancedCombinator:create_output_combinator(entity)
             y = entity.position.y,
         }
     end
-    self.output_entity = entity.surface.create_entity {
-        name = "enhanced-output-combinator-" .. self.version,
+    enhanced_combinator.output_entity = entity.surface.create_entity {
+        name = "enhanced-output-combinator-" .. enhanced_combinator.version,
         position = output_position,
         direction = direction,
         force = entity.force,
     }
 
     -- Link output combinator to enhanced combinator
-    if self.output_entity then
-        local output_entity_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
-        global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = self.id
+    if enhanced_combinator.output_entity then
+        local output_entity_id = create_any_id_from_entity(enhanced_combinator.output_entity)
+        global.enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = enhanced_combinator.id
     else
         Debug.loge("Couldn't create Enhanced output combinator")
     end
 end
 
-function EnhancedCombinator.create_id_from_entity(entity)
-    if string.starts(entity.name, EnhancedCombinator.get_name()) then
-        return EnhancedCombinator.create_any_id_from_entity(entity)
-    elseif string.starts(entity.name, EnhancedCombinator.get_output_name()) then
-        -- Get the enhanced combinator rather than the enhanced-output-combinator
-        local output_id = EnhancedCombinator.create_any_id_from_entity(entity)
-        return global.enhanced_output_combinator_to_enhanced_combinator[output_id]
+--- Constructor
+--- @param combinator this combinator (self)
+--- @param entity the entity that was placed
+local EnhancedCombinator = class(function(combinator, entity)
+    combinator.entity = entity
+    if entity ~= nil then
+        combinator.id = create_id_from_entity(entity)
+        combinator.name = entity.name
+        combinator.version = tonumber(string.sub(entity.name, -1))
+        Debug.logd(combinator.name .. ", version: " .. combinator.version)
     end
-end
+    combinator.update_interval = 1
+    combinator.update_counter = 0
+    combinator.type = TYPES_INACTIVE
+    combinator.output_type = OUTPUT_TYPE_ONE
+    combinator.filters = {}
+    combinator.filters_lookup = {}
+    combinator.average_type = AVERAGE_TYPE_MEAN
+
+    -- Create output combinator
+    if entity ~= nil then
+        create_output_combinator(combinator)
+    end
+end)
 
 function EnhancedCombinator.create_any_id_from_entity(entity)
-    return entity.surface.name .. ":" .. entity.position.x .. ";" .. entity.position.y
+    return create_any_id_from_entity(entity)
+end
+
+function EnhancedCombinator.create_id_from_entity(entity)
+    return create_id_from_entity(entity)
 end
 
 function EnhancedCombinator.is_instance(entity)
@@ -171,11 +192,88 @@ function EnhancedCombinator.is_output_instance(entity)
 end
 
 function EnhancedCombinator.get_name()
-    return "enhanced-combinator"
+    return INPUT_COMBINATOR_NAME
 end
 
 function EnhancedCombinator.get_output_name()
-    return "enhanced-output-combinator"
+    return OUTPUT_COMBINATOR_NAME
+end
+
+function EnhancedCombinator:on_entity_settings_pasted(source_entity, destination_entity)
+    -- Copied to the output constant combinator. Then reset it. The player should never be able to change it manually
+    if destination_entity == self.output_entity then
+        CircuitNetwork.clear_output_signals(destination_entity)
+        self.update_counter = self.update_interval
+
+        -- If we copied from an enhanced combinator (either input or output), copy it's values
+        if self.is_instance(source_entity) then
+            local other_id = self.create_id_from_entity(source_entity)
+            local other_combinator = global.enhanced_combinators[other_id]
+            self:copy_settings_from(other_combinator)
+        else -- Just reset constant combinator
+            self:on_tick()
+        end
+
+    else -- We copied to the enhanced (input) combinator
+        -- Copy settings from the other enhanced (input) combinator
+        if self.is_instance(source_entity) then
+            local other_id = self.create_id_from_entity(source_entity)
+            local other_combinator = global.enhanced_combinators[other_id]
+            self:copy_settings_from(other_combinator)
+        else -- Copied from an arithmetic combinator
+            -- Switch back the functionality sprite as that has probably been changed
+            local control = self.entity.get_control_behavior()
+            CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
+        end
+    end
+end
+
+--- Copy another enhanced combinator settings to this. If self.version is lower than from_combinator.version not
+--- all values are copied.
+--- @param from_combinator the enhanced combinator to copy values from.
+function EnhancedCombinator:copy_settings_from(from_combinator)
+    self.update_interval = from_combinator.update_interval
+    self.output_type = from_combinator.output_type
+    self.average_type = from_combinator.average_type
+    self.sort_order = from_combinator.sort_order
+
+    -- Copy filters
+    for i = 1, (self.version * FILTERS_PER_VERSION) do
+        local signal = from_combinator.filters[i]
+        if signal then
+            self.filters[i] = signal
+            self.filters_lookup[signal.name] = true
+        else
+            local old_signal = self.filters[i]
+            if old_signal then
+                self.filters[i] = nil
+                self.filters_lookup[old_signal.name] = nil
+            end
+        end
+    end
+
+    -- Change type/functionality.
+    if self.version >= from_combinator.version then
+        self.type = from_combinator.type
+    else -- Check if it's available, if not, set to inactive
+        local available = false
+        for k, type in pairs(TYPES_AVAILABLE[self.version]) do
+            if type == from_combinator.type then
+                available = true
+                break
+            end
+        end
+
+        if available then
+            self.type = from_combinator.type
+        else
+            self.type = TYPES_INACTIVE
+        end
+    end
+
+    -- Update type sprite
+    local control = self.entity.get_control_behavior()
+    CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
 end
 
 function EnhancedCombinator:on_tick()
@@ -303,7 +401,7 @@ function EnhancedCombinator:on_tick_timer()
             local filtered_input_singnal = input_signals[self.output_signal.name]
             if filtered_input_singnal then
                 count = filtered_input_singnal.count
-                end
+            end
         else
             count = 1
         end
@@ -328,7 +426,7 @@ function EnhancedCombinator:on_player_rotated_entity(event)
     local output_id = EnhancedCombinator.create_any_id_from_entity(self.output_entity)
     global.enhanced_output_combinator_to_enhanced_combinator[output_id] = nil
     self.output_entity.destroy()
-    self:create_output_combinator(self.entity)
+    create_output_combinator(self)
 end
 
 function EnhancedCombinator.get_event_combinator(event)
@@ -369,10 +467,6 @@ function EnhancedCombinator:create_optional_frames(window)
     self:gui_create_output_frame(window)
 end
 
-function EnhancedCombinator:on_gui_click(event)
-    -- TODO
-end
-
 --- Switch the function of this combinator
 --- @param dropdown_element the drop-down GUI element
 function EnhancedCombinator:switch_function(dropdown_element)
@@ -381,7 +475,7 @@ function EnhancedCombinator:switch_function(dropdown_element)
 
     -- Update combinator display sprite
     Debug.logd("Changing to sprite: " .. TYPE_SPRITES[self.type])
-    local control = self.entity.get_or_create_control_behavior()
+    local control = self.entity.get_control_behavior()
     CircuitNetwork.set_operation(control, TYPE_SPRITES[self.type])
 
     -- Clear output signals
@@ -469,7 +563,8 @@ function EnhancedCombinator:set_output_type(element, output_type)
 end
 
 function EnhancedCombinator:set_filter(element)
-    local filter_index = tonumber(element.name:match("%d$"))
+    local filter_index = tonumber(element.name:match("%d+$"))
+    Debug.logd("Set filter: " .. filter_index)
     local old_signal = self.filters[filter_index]
     if element.elem_value then
         self.filters_lookup[element.elem_value.name] = true
@@ -518,7 +613,7 @@ function EnhancedCombinator:gui_create_window(player)
 end
 
 function EnhancedCombinator:gui_create_function_frame(window)
-    self.function_frame = window.add({ type = "frame", name = GUI_FRAME_FUNCTION, caption = { "enhanced-combinator.function" }, style = "enhanced-combinators-frame" })
+    local function_frame = window.add({ type = "frame", name = GUI_FRAME_FUNCTION, caption = { "enhanced-combinator.function" }, style = "enhanced-combinators-frame" })
 
     local available_functions = {}
     local selected_index = 0
@@ -529,18 +624,18 @@ function EnhancedCombinator:gui_create_function_frame(window)
         table.insert(available_functions, TYPE_NAMES[type])
     end
 
-    self.function_frame.add({ type = "drop-down", name = GUI_FUNCTION_DROPDOWN, items = available_functions, selected_index = selected_index })
+    function_frame.add({ type = "drop-down", name = GUI_FUNCTION_DROPDOWN, items = available_functions, selected_index = selected_index })
 end
 
 --- Create filters frame. One row for version 1, two for version 2, three for 3.
 function EnhancedCombinator:gui_create_filter_frame(window)
     if self:is_filter_functionality() then
         local filter_frame = window.add({ type = "frame", name = "filter-frame", caption = { "gui-control-behavior-modes.set-filters" }, style = "enhanced-combinators-frame" })
-        local filter_table = filter_frame.add({ type = "table", name = "filter-table", column_count = 6, style = "enhanced-combinators-filter-table" })
+        local filter_table = filter_frame.add({ type = "table", name = "filter-table", column_count = FILTERS_PER_VERSION, style = "enhanced-combinators-filter-table" })
 
         local rows = self.version
 
-        for i = 1, 6 * rows do
+        for i = 1, FILTERS_PER_VERSION * rows do
             local name = GUI_FILTER_ELEM_BUTTON .. i
             local filter = filter_table.add({ type = "choose-elem-button", name = name, elem_type = "signal" })
             filter.elem_value = self.filters[i]

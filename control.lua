@@ -55,10 +55,12 @@ local function on_remove_entity(event)
 end
 
 local function on_entity_settings_pasted(event)
-    local entity = event.entity
+    local entity = event.destination
     if EnhancedCombinator.is_instance(entity) then
         Debug.logd("on_entity_settings_pasted for Enhanced Combinator")
-        -- TODO
+        local id = EnhancedCombinator.create_id_from_entity(entity)
+        local enhanced_combinator = enhanced_combinators[id]
+        enhanced_combinator:on_entity_settings_pasted(event.source, entity)
     end
     Debug.logd("on_entity_settings_pasted")
 end
