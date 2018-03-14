@@ -47,7 +47,6 @@ local function on_built_entity(event)
         entity.destroy()
 
         if enhanced_combinator_entity then
-            Debug.logd(enhanced_combinator_entity.name)
             local enhanced_combinator = EnhancedCombinator(enhanced_combinator_entity)
             enhanced_combinators[enhanced_combinator.id] = enhanced_combinator
         end
@@ -63,7 +62,6 @@ local function on_remove_entity(event)
         enhanced_combinator.output_entity.destroy()
         enhanced_combinators[input_entity_id] = nil
         enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = nil
-        Debug.logd("Removed Enhanced Combinator, id: " .. input_entity_id)
     elseif EnhancedCombinator.is_output_instance(entity) then
         local output_entity_id = EnhancedCombinator.create_any_id_from_entity(entity)
         local input_entity_id = EnhancedCombinator.create_id_from_entity(entity)
@@ -71,19 +69,16 @@ local function on_remove_entity(event)
         enhanced_combinator.entity.destroy()
         enhanced_combinators[input_entity_id] = nil
         enhanced_output_combinator_to_enhanced_combinator[output_entity_id] = nil
-        Debug.logd("Removed Enhanced Output Combinator, id: " .. output_entity_id)
     end
 end
 
 local function on_entity_settings_pasted(event)
     local entity = event.destination
     if EnhancedCombinator.is_instance(entity) then
-        Debug.logd("on_entity_settings_pasted for Enhanced Combinator")
         local id = EnhancedCombinator.create_id_from_entity(entity)
         local enhanced_combinator = enhanced_combinators[id]
         enhanced_combinator:on_entity_settings_pasted(event.source, entity)
     end
-    Debug.logd("on_entity_settings_pasted")
 end
 
 local function on_tick()
@@ -95,26 +90,16 @@ end
 local function on_entity_damaged(event)
     local entity = event.entity
     if EnhancedCombinator.is_instance(entity) then
-        Debug.logd("on_entity_settings_pasted for Enhanced Combinator")
         -- TODO
     end
-    Debug.logd("on_entity_settings_pasted")
 end
 
 local function on_entity_died(event)
     local entity = event.entity
     if EnhancedCombinator.is_instance(entity) then
-        Debug.logd("on_entity_settings_pasted for Enhanced Combinator")
         -- TODO
     end
-    Debug.logd("on_entity_settings_pasted")
 end
-
-local function on_player_setup_blueprint(event)
-    Debug.logd("Player blueprint setup:")
-    Debug.logd(event)
-end
-
 
 -- GUI
 local function on_gui_opened(event)
@@ -123,7 +108,6 @@ local function on_gui_opened(event)
 
     if event.gui_type == defines.gui_type.entity then
         local entity = event.entity
-        Debug.logd("opened name: " .. entity.name)
         if EnhancedCombinator.is_instance(entity) then
             local id = EnhancedCombinator.create_id_from_entity(entity)
             local combinator = enhanced_combinators[id]
@@ -149,7 +133,6 @@ local function on_gui_opened(event)
 end
 
 local function on_gui_changed(event)
-    Debug.logd("on_gui_changed")
     local combinator = EnhancedCombinator.get_event_combinator(event)
     if combinator then
         combinator:on_gui_changed(event)
@@ -157,7 +140,6 @@ local function on_gui_changed(event)
 end
 
 local function on_player_rotated_entity(event)
-    Debug.logd("on_player_rotated_entity")
     local entity = event.entity
     if EnhancedCombinator.is_instance(entity) then
         local combinator_id = EnhancedCombinator.create_id_from_entity(entity)
@@ -181,7 +163,6 @@ script.on_event(defines.events.on_tick, on_tick)
 script.on_event(defines.events.on_entity_settings_pasted, on_entity_settings_pasted)
 script.on_event(defines.events.on_entity_damaged, on_entity_damaged)
 script.on_event(defines.events.on_entity_died, on_entity_died)
-script.on_event(defines.events.on_player_setup_blueprint, on_player_setup_blueprint)
 
 -- GUI
 script.on_event(defines.events.on_gui_opened, on_gui_opened)
