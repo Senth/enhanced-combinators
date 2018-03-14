@@ -7,7 +7,7 @@ local enhanced_output_combinator_to_enhanced_combinator = {}
 -- INIT
 local function on_init()
     global.enhanced_combinators = {}
-    global.enhanced_combinators_opened_guis = {}
+    global.enhanced_combinators_open_guis = {}
     global.enhanced_output_combinator_to_enhanced_combinators = {}
 end
 
