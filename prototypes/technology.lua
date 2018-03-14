@@ -46,7 +46,7 @@ data:extend({
     },
     {
         type = "technology",
-        name = "enhanced-combinators-3",
+        name = "enhanced-combinator-3",
         icon_size = 128,
         icon = "__enhanced-combinators__/graphics/technology/enhanced-combinator-3.png",
         effects = {
